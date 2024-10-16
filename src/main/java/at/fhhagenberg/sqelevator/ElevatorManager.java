@@ -64,6 +64,15 @@ public class ElevatorManager {
     }
 
     private void publishChanges() throws MqttException {
+    	
+    	if (elevatorSystem.hasFloorButtonUpChanged()) {
+    		publishToMQTT("floor/buttonUp", Arrays.toString(elevatorSystem.getFloorButtonUp()));
+    	}
+    	if (elevatorSystem.hasFloorButtonDownChanged()) {
+    		publishToMQTT("floor/buttonDown", Arrays.toString(elevatorSystem.getFloorButtonDown()));
+    	}
+    		
+    	
         for (Elevator elevator : elevatorSystem.getElevators()) {
             int elevatorNumber = elevator.getElevatorNumber();
 

@@ -48,12 +48,12 @@ public class ElevatorTest {
         assertEquals(0, elevator.getWeight());
         assertEquals(0, elevator.getCapacity());
         assertEquals(0, elevator.getTargetFloor());
-        var floorButtons = elevator.getFloorButtons();
+        var elevatorButtons = elevator.getElevatorButtons();
         var serviceFloors = elevator.getServiceFloors();
-        assertEquals(5, floorButtons.length);
+        assertEquals(5, elevatorButtons.length);
         assertEquals(5, serviceFloors.length);
-        boolean[] expectedFloorButtons = {false, false, false, false, false};
-        assertArrayEquals(expectedFloorButtons, floorButtons);
+        boolean[] expectedElevatorButtons = {false, false, false, false, false};
+        assertArrayEquals(expectedElevatorButtons, elevatorButtons);
         boolean[] expectedServiceFloors = {false, false, false, false, false};
         assertArrayEquals(expectedServiceFloors, serviceFloors);
     }
@@ -70,11 +70,14 @@ public class ElevatorTest {
         when(mockPlc.getElevatorWeight(1)).thenReturn(500);
         when(mockPlc.getTarget(1)).thenReturn(4);
         when(mockPlc.getElevatorCapacity(1)).thenReturn(10);
-        when(mockPlc.getCommittedDirection(1)).thenReturn(IElevator.ELEVATOR_DIRECTION_UP);
-        when(mockPlc.getCommittedDirection(1)).thenReturn(IElevator.ELEVATOR_DIRECTION_UP);
-        when(mockPlc.getCommittedDirection(1)).thenReturn(IElevator.ELEVATOR_DIRECTION_UP);
-        when(mockPlc.getCommittedDirection(1)).thenReturn(IElevator.ELEVATOR_DIRECTION_UP);
-        when(mockPlc.getCommittedDirection(1)).thenReturn(IElevator.ELEVATOR_DIRECTION_UP);
+        for(int i = 0; i < 5; i++)
+        {
+        	when(mockPlc.getElevatorButton(1,i)).thenReturn(false);
+        }
+        for(int i = 0; i < 5; i++)
+        {
+        	when(mockPlc.getServicesFloors(1,i)).thenReturn(false);
+        }
 
         // Update elevator state from mock PLC
         elevator.updateFromPLC(mockPlc);
@@ -88,6 +91,15 @@ public class ElevatorTest {
         assertEquals(10, elevator.getSpeed());
         assertEquals(500, elevator.getWeight());
         assertEquals(4, elevator.getTargetFloor());
+        assertEquals(10, elevator.getCapacity());
+        for(int i = 0; i < 5; i++)
+        {
+        	assertEquals(false, elevator.getElevatorButtons()[i]);
+        }
+        for(int i = 0; i < 5; i++)
+        {
+        	assertEquals(false, elevator.getServiceFloors()[i]);
+        }
     }
 
     @Test
@@ -133,13 +145,13 @@ public class ElevatorTest {
         elevator.updateFromPLC(mockPlc);
 
         // Assert no changes at first
-        assertFalse(elevator.haveFloorButtonsChanged());
+        assertFalse(elevator.haveElevatorButtonsChanged());
 
         // Second update: button 1 pressed
         when(mockPlc.getElevatorButton(1, 1)).thenReturn(true);
         elevator.updateFromPLC(mockPlc);
 
         // Assert that floor buttons have changed
-        assertTrue(elevator.haveFloorButtonsChanged());
+        assertTrue(elevator.haveElevatorButtonsChanged());
     }
 }

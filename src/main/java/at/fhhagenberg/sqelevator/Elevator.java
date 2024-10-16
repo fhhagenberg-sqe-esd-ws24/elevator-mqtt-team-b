@@ -28,7 +28,7 @@ public class Elevator {
     private int weight;
     private int capacity;
     private int targetFloor;
-    private boolean[] floorButtons;
+    private boolean[] elevatorButtons;
     private boolean[] serviceFloors;
 
     // Previous state (used for comparison)
@@ -40,20 +40,20 @@ public class Elevator {
     private int prevSpeed = -1;
     private int prevWeight = -1;
     private int prevTargetFloor = -1;
-    private boolean[] prevFloorButtons = null;
+    private boolean[] prevElevatorButtons = null;
     private boolean[] prevServiceFloors = null;
 
     public Elevator(int elevatorNumber, int numFloors) {
         this.elevatorNumber = elevatorNumber;
-        this.floorButtons = new boolean[numFloors];
+        this.elevatorButtons = new boolean[numFloors];
         this.serviceFloors = new boolean[numFloors];
 
         // Initialize previous state arrays
-        this.prevFloorButtons = new boolean[numFloors];
+        this.prevElevatorButtons = new boolean[numFloors];
         this.prevServiceFloors = new boolean[numFloors];
         
         // Set prev initial values != current initial values to trigger hasChanged on first change
-        Arrays.fill(this.prevFloorButtons, true);
+        Arrays.fill(this.prevElevatorButtons, true);
         Arrays.fill(this.prevServiceFloors, true);
     }
 
@@ -98,8 +98,8 @@ public class Elevator {
         return targetFloor;
     }
 
-    public boolean[] getFloorButtons() {
-        return floorButtons.clone(); // Return a copy to preserve encapsulation
+    public boolean[] getElevatorButtons() {
+        return elevatorButtons.clone(); // Return a copy to preserve encapsulation
     }
 
     public boolean[] getServiceFloors() {
@@ -117,7 +117,7 @@ public class Elevator {
         prevSpeed = speed;
         prevWeight = weight;
         prevTargetFloor = targetFloor;
-        prevFloorButtons = floorButtons.clone();
+        prevElevatorButtons = elevatorButtons.clone();
         prevServiceFloors = serviceFloors.clone();
 
         // Update the current state
@@ -131,8 +131,8 @@ public class Elevator {
         capacity = plc.getElevatorCapacity(elevatorNumber);
         targetFloor = plc.getTarget(elevatorNumber);
 
-        for (int i = 0; i < floorButtons.length; i++) {
-            floorButtons[i] = plc.getElevatorButton(elevatorNumber, i);
+        for (int i = 0; i < elevatorButtons.length; i++) {
+            elevatorButtons[i] = plc.getElevatorButton(elevatorNumber, i);
             serviceFloors[i] = plc.getServicesFloors(elevatorNumber, i);
         }
     }
@@ -170,8 +170,8 @@ public class Elevator {
         return targetFloor != prevTargetFloor;
     }
 
-    public boolean haveFloorButtonsChanged() {
-        return !Arrays.equals(floorButtons, prevFloorButtons);
+    public boolean haveElevatorButtonsChanged() {
+        return !Arrays.equals(elevatorButtons, prevElevatorButtons);
     }
 
     public boolean haveServiceFloorsChanged() {
@@ -182,7 +182,7 @@ public class Elevator {
     public boolean hasStateChanged() {
         return hasCommittedDirectionChanged() || hasAccelerationChanged() || hasDoorStatusChanged() ||
                hasCurrentFloorChanged() || hasPositionChanged() || hasSpeedChanged() ||
-               hasWeightChanged() || hasTargetFloorChanged() || haveFloorButtonsChanged() ||
+               hasWeightChanged() || hasTargetFloorChanged() || haveElevatorButtonsChanged() ||
                haveServiceFloorsChanged();
     }
 }
