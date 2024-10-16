@@ -13,6 +13,8 @@
  *
 ** *********************************************************************/
 
+package at.fhhagenberg.sqelevator;
+
 import java.util.Timer;
 import java.util.TimerTask;
 import org.eclipse.paho.client.mqttv3.MqttClient;
@@ -30,7 +32,12 @@ public class ElevatorManager {
         this.mqttClient = mqttClient;
         int numElevators = plc.getElevatorNum();
         int numFloors = plc.getFloorNum();
+        
+        // Create elevator system and publish initial values BEFORE reading values from PLC
         this.elevatorSystem = new ElevatorSystem(numElevators, numFloors);
+        publishChanges();
+        
+        // Create polling timer task
         this.timer = new Timer(true); // Timer runs as a daemon thread
     }
 

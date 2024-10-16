@@ -13,6 +13,8 @@
  *
 ** *********************************************************************/
 
+package at.fhhagenberg.sqelevator;
+
 import java.util.Arrays;
 
 public class Elevator {
@@ -30,16 +32,16 @@ public class Elevator {
     private boolean[] serviceFloors;
 
     // Previous state (used for comparison)
-    private int prevCommittedDirection;
-    private int prevAcceleration;
-    private int prevDoorStatus;
-    private int prevCurrentFloor;
-    private int prevPosition;
-    private int prevSpeed;
-    private int prevWeight;
-    private int prevTargetFloor;
-    private boolean[] prevFloorButtons;
-    private boolean[] prevServiceFloors;
+    private int prevCommittedDirection = -1;
+    private int prevAcceleration = -1;
+    private int prevDoorStatus = -1;
+    private int prevCurrentFloor = -1;
+    private int prevPosition = -1;
+    private int prevSpeed = -1;
+    private int prevWeight = -1;
+    private int prevTargetFloor = -1;
+    private boolean[] prevFloorButtons = null;
+    private boolean[] prevServiceFloors = null;
 
     public Elevator(int elevatorNumber, int numFloors) {
         this.elevatorNumber = elevatorNumber;
@@ -49,6 +51,10 @@ public class Elevator {
         // Initialize previous state arrays
         this.prevFloorButtons = new boolean[numFloors];
         this.prevServiceFloors = new boolean[numFloors];
+        
+        // Set prev initial values != current initial values to trigger hasChanged on first change
+        Arrays.fill(this.prevFloorButtons, true);
+        Arrays.fill(this.prevServiceFloors, true);
     }
 
     // Getters for each attribute
@@ -164,11 +170,11 @@ public class Elevator {
         return targetFloor != prevTargetFloor;
     }
 
-    public boolean hasFloorButtonsChanged() {
+    public boolean haveFloorButtonsChanged() {
         return !Arrays.equals(floorButtons, prevFloorButtons);
     }
 
-    public boolean hasServiceFloorsChanged() {
+    public boolean haveServiceFloorsChanged() {
         return !Arrays.equals(serviceFloors, prevServiceFloors);
     }
 
@@ -176,7 +182,7 @@ public class Elevator {
     public boolean hasStateChanged() {
         return hasCommittedDirectionChanged() || hasAccelerationChanged() || hasDoorStatusChanged() ||
                hasCurrentFloorChanged() || hasPositionChanged() || hasSpeedChanged() ||
-               hasWeightChanged() || hasTargetFloorChanged() || hasFloorButtonsChanged() ||
-               hasServiceFloorsChanged();
+               hasWeightChanged() || hasTargetFloorChanged() || haveFloorButtonsChanged() ||
+               haveServiceFloorsChanged();
     }
 }
