@@ -39,9 +39,23 @@ public class ElevatorTest {
     public void testInitialElevatorState() {
         // Check if the initial state of the elevator is set correctly
         assertEquals(1, elevator.getElevatorNumber());
-        assertEquals(0, elevator.getCommittedDirection());  // Default value
-        assertEquals(0, elevator.getAcceleration());         // Default value
-        assertEquals(0, elevator.getDoorStatus());           // Default value
+        assertEquals(0, elevator.getCommittedDirection());
+        assertEquals(0, elevator.getAcceleration());
+        assertEquals(0, elevator.getDoorStatus());
+        assertEquals(0, elevator.getCurrentFloor());
+        assertEquals(0, elevator.getPosition());
+        assertEquals(0, elevator.getSpeed());
+        assertEquals(0, elevator.getWeight());
+        assertEquals(0, elevator.getCapacity());
+        assertEquals(0, elevator.getTargetFloor());
+        var floorButtons = elevator.getFloorButtons();
+        var serviceFloors = elevator.getServiceFloors();
+        assertEquals(5, floorButtons.length);
+        assertEquals(5, serviceFloors.length);
+        boolean[] expectedFloorButtons = {false, false, false, false, false};
+        assertArrayEquals(expectedFloorButtons, floorButtons);
+        boolean[] expectedServiceFloors = {false, false, false, false, false};
+        assertArrayEquals(expectedServiceFloors, serviceFloors);
     }
 
     @Test
@@ -55,6 +69,12 @@ public class ElevatorTest {
         when(mockPlc.getElevatorSpeed(1)).thenReturn(10);
         when(mockPlc.getElevatorWeight(1)).thenReturn(500);
         when(mockPlc.getTarget(1)).thenReturn(4);
+        when(mockPlc.getElevatorCapacity(1)).thenReturn(10);
+        when(mockPlc.getCommittedDirection(1)).thenReturn(IElevator.ELEVATOR_DIRECTION_UP);
+        when(mockPlc.getCommittedDirection(1)).thenReturn(IElevator.ELEVATOR_DIRECTION_UP);
+        when(mockPlc.getCommittedDirection(1)).thenReturn(IElevator.ELEVATOR_DIRECTION_UP);
+        when(mockPlc.getCommittedDirection(1)).thenReturn(IElevator.ELEVATOR_DIRECTION_UP);
+        when(mockPlc.getCommittedDirection(1)).thenReturn(IElevator.ELEVATOR_DIRECTION_UP);
 
         // Update elevator state from mock PLC
         elevator.updateFromPLC(mockPlc);
