@@ -17,19 +17,15 @@ package at.fhhagenberg.sqelevator;
 
 import java.util.Timer;
 import java.util.TimerTask;
-import org.eclipse.paho.client.mqttv3.MqttClient;
-import org.eclipse.paho.client.mqttv3.MqttException;
-import org.eclipse.paho.client.mqttv3.MqttMessage;
+import java.util.Arrays;
 
 public class ElevatorManager {
     private IElevator plc;
     private ElevatorSystem elevatorSystem;
     private Timer timer;
-    private MqttClient mqttClient;
 
-    public ElevatorManager(IElevator plc, MqttClient mqttClient) throws java.rmi.RemoteException {
+    public ElevatorManager(IElevator plc) throws java.rmi.RemoteException {
         this.plc = plc;
-        this.mqttClient = mqttClient;
         int numElevators = plc.getElevatorNum();
         int numFloors = plc.getFloorNum();
         
@@ -48,7 +44,7 @@ public class ElevatorManager {
                 try {
                     elevatorSystem.updateElevators(plc);
                     publishChanges();
-                } catch (java.rmi.RemoteException | MqttException e) {
+                } catch (java.rmi.RemoteException e) {
                     e.printStackTrace();
                 }
             }
@@ -63,7 +59,7 @@ public class ElevatorManager {
         timer.cancel();
     }
 
-    private void publishChanges() throws MqttException {
+    private void publishChanges() {
     	
     	if (elevatorSystem.hasFloorButtonUpChanged()) {
     		publishToMQTT("floor/buttonUp", Arrays.toString(elevatorSystem.getFloorButtonUp()));
@@ -109,8 +105,8 @@ public class ElevatorManager {
                 publishToMQTT("elevator/" + elevatorNumber + "/targetFloor", String.valueOf(elevator.getTargetFloor()));
             }
 
-            if (elevator.haveFloorButtonsChanged()) {
-                publishToMQTT("elevator/" + elevatorNumber + "/floorButtons", Arrays.toString(elevator.getFloorButtons()));
+            if (elevator.haveElevatorButtonsChanged()) {
+                publishToMQTT("elevator/" + elevatorNumber + "/floorButtons", Arrays.toString(elevator.getElevatorButtons()));
             }
 
             if (elevator.haveServiceFloorsChanged()) {
@@ -120,8 +116,8 @@ public class ElevatorManager {
     }
 
     // Utility method for publishing MQTT messages
-    private void publishToMQTT(String topic, String messageContent) throws MqttException {
-        MqttMessage message = new MqttMessage(messageContent.getBytes());
-        mqttClient.publish(topic, message);
+    private void publishToMQTT(String topic, String messageContent) {
+        //MqttMessage message = new MqttMessage(messageContent.getBytes());
+        //mqttClient.publish(topic, message);
     }
 }
