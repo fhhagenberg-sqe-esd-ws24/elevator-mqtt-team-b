@@ -20,17 +20,24 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 public class ElevatorSystem {
+	private IElevator plc;
     private List<Elevator> elevators;
+    private int numElevators;
     private int numFloors;
+    private int floorHeight;
     private boolean[] floorButtonUp;
     private boolean[] floorButtonDown;
     
     private boolean[] prevFloorButtonUp;
     private boolean[] prevFloorButtonDown;
 
-    public ElevatorSystem(int numElevators, int numFloors) {
+    public ElevatorSystem(IElevator plc) throws java.rmi.RemoteException { 	
+    	this.plc = plc;
+    	
+        this.numElevators = plc.getElevatorNum();
+        this.numFloors = plc.getFloorNum();
+        this.floorHeight = plc.getFloorHeight();
         this.elevators = new ArrayList<>();
-        this.numFloors = numFloors;
         
         for (int i = 0; i < numElevators; i++) {
             this.elevators.add(new Elevator(i, numFloors));
@@ -53,9 +60,18 @@ public class ElevatorSystem {
     public Elevator getElevator(int elevatorNumber) {
         return elevators.get(elevatorNumber);
     }
+    
+    public int getNumElevator()
+    {
+    	return numElevators;
+    }
 
     public int getNumFloors() {
         return numFloors;
+    }
+    
+    public int getFloorHeight() {
+        return floorHeight;
     }
 
     public boolean[] getFloorButtonUp() {
@@ -74,7 +90,7 @@ public class ElevatorSystem {
         return !Arrays.equals(floorButtonDown, prevFloorButtonDown);
     }
     
-    public void updateElevators(IElevator plc) throws java.rmi.RemoteException {
+    public void updateElevators() throws java.rmi.RemoteException {
     	prevFloorButtonUp = floorButtonUp.clone();
     	prevFloorButtonDown = floorButtonDown.clone();
     	

@@ -37,7 +37,7 @@ public class ElevatorSystemTest {
         when(mockPlc.getFloorNum()).thenReturn(5);
 
         // Create an ElevatorSystem with 2 elevators and 5 floors
-        elevatorSystem = new ElevatorSystem(2, 5);
+        elevatorSystem = new ElevatorSystem(mockPlc);
     }
 
     @Test
@@ -57,7 +57,7 @@ public class ElevatorSystemTest {
         when(mockPlc.getCommittedDirection(1)).thenReturn(IElevator.ELEVATOR_DIRECTION_DOWN);
 
         // Update the elevator system
-        elevatorSystem.updateElevators(mockPlc);
+        elevatorSystem.updateElevators();
 
         // Verify that each elevator has been updated with the correct values
         assertEquals(IElevator.ELEVATOR_DIRECTION_UP, elevatorSystem.getElevators().get(0).getCommittedDirection());
@@ -72,14 +72,14 @@ public class ElevatorSystemTest {
         when(mockPlc.getCommittedDirection(0)).thenReturn(IElevator.ELEVATOR_DIRECTION_DOWN);
 
         // First update
-        elevatorSystem.updateElevators(mockPlc);
+        elevatorSystem.updateElevators();
 
         // Check initial state
         assertEquals(IElevator.ELEVATOR_DIRECTION_DOWN, elevator.getCommittedDirection());
 
         // Change in state
         when(mockPlc.getCommittedDirection(0)).thenReturn(IElevator.ELEVATOR_DIRECTION_UP);
-        elevatorSystem.updateElevators(mockPlc);
+        elevatorSystem.updateElevators();
 
         // Assert that the elevator state has changed
         assertTrue(elevator.hasCommittedDirectionChanged());
