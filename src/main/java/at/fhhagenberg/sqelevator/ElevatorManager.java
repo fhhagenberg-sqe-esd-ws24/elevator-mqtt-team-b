@@ -36,27 +36,28 @@ public class ElevatorManager {
                        
         // Create elevator system and publish initial values BEFORE reading values from PLC
         this.elevatorSystem = new ElevatorSystem(plc);
-        initialPublish();
-        publishChanges();
         
         // Create polling timer task
         this.timer = new Timer(true); // Timer runs as a daemon thread
     }
 
     public void startPolling() throws MqttException {
-	    // connect to mqtt
 	    MqttConnectionOptions options = new MqttConnectionOptions();
 	    options.setAutomaticReconnect(true);
 	    options.setCleanStart(true);  
-	 
+	    
+	    // connect to mqtt broker
 	    mqttClient.connect(options);
+	    
+	    // initial publish after connect
+        initialPublish();
 	    	
 		timer.scheduleAtFixedRate(new TimerTask() {
 		    @Override
 		    public void run() {
 		        try {
 		            elevatorSystem.updateElevators();
-		            publishChanges();
+		            publishChanges(false);
 		        } catch (java.rmi.RemoteException e) {
 		            e.printStackTrace();
 		        }
@@ -84,14 +85,16 @@ public class ElevatorManager {
     	publishToMQTT("system/numElevator", String.valueOf(elevatorSystem.getNumElevator()));
     	publishToMQTT("system/numFloors", String.valueOf(elevatorSystem.getNumFloors()));	    	
     	publishToMQTT("system/floorHeight", String.valueOf(elevatorSystem.getFloorHeight()));	
+    	
+        publishChanges(true);
     }
         
-    private void publishChanges() {
+    private void publishChanges(boolean doForce) {
     	
-    	if (elevatorSystem.hasFloorButtonUpChanged()) {
+    	if (doForce || elevatorSystem.hasFloorButtonUpChanged()) {
     		publishToMQTT("system/floor/buttonUp", Arrays.toString(elevatorSystem.getFloorButtonUp()));
     	}
-    	if (elevatorSystem.hasFloorButtonDownChanged()) {
+    	if (doForce || elevatorSystem.hasFloorButtonDownChanged()) {
     		publishToMQTT("system/floor/buttonDown", Arrays.toString(elevatorSystem.getFloorButtonDown()));
     	}
     		
@@ -100,43 +103,43 @@ public class ElevatorManager {
             int elevatorNumber = elevator.getElevatorNumber();
 
             // Check and publish individual attribute changes
-            if (elevator.hasCommittedDirectionChanged()) {
+            if (doForce || elevator.hasCommittedDirectionChanged()) {
                 publishToMQTT("system/elevator/" + elevatorNumber + "/committedDirection", String.valueOf(elevator.getCommittedDirection()));
             }
 
-            if (elevator.hasAccelerationChanged()) {
+            if (doForce || elevator.hasAccelerationChanged()) {
                 publishToMQTT("system/elevator/" + elevatorNumber + "/acceleration", String.valueOf(elevator.getAcceleration()));
             }
 
-            if (elevator.hasDoorStatusChanged()) {
+            if (doForce || elevator.hasDoorStatusChanged()) {
                 publishToMQTT("system/elevator/" + elevatorNumber + "/doorStatus", String.valueOf(elevator.getDoorStatus()));
             }
 
-            if (elevator.hasCurrentFloorChanged()) {
+            if (doForce || elevator.hasCurrentFloorChanged()) {
                 publishToMQTT("system/elevator/" + elevatorNumber + "/currentFloor", String.valueOf(elevator.getCurrentFloor()));
             }
 
-            if (elevator.hasPositionChanged()) {
+            if (doForce || elevator.hasPositionChanged()) {
                 publishToMQTT("system/elevator/" + elevatorNumber + "/position", String.valueOf(elevator.getPosition()));
             }
 
-            if (elevator.hasSpeedChanged()) {
+            if (doForce || elevator.hasSpeedChanged()) {
                 publishToMQTT("system/elevator/" + elevatorNumber + "/speed", String.valueOf(elevator.getSpeed()));
             }
 
-            if (elevator.hasWeightChanged()) {
+            if (doForce || elevator.hasWeightChanged()) {
                 publishToMQTT("system/elevator/" + elevatorNumber + "/weight", String.valueOf(elevator.getWeight()));
             }
 
-            if (elevator.hasTargetFloorChanged()) {
+            if (doForce || elevator.hasTargetFloorChanged()) {
                 publishToMQTT("system/elevator/" + elevatorNumber + "/targetFloor", String.valueOf(elevator.getTargetFloor()));
             }
 
-            if (elevator.haveElevatorButtonsChanged()) {
+            if (doForce || elevator.haveElevatorButtonsChanged()) {
                 publishToMQTT("system/elevator/" + elevatorNumber + "/floorButtons", Arrays.toString(elevator.getElevatorButtons()));
             }
 
-            if (elevator.haveServiceFloorsChanged()) {
+            if (doForce || elevator.haveServiceFloorsChanged()) {
                 publishToMQTT("system/elevator/" + elevatorNumber + "/serviceFloors", Arrays.toString(elevator.getServiceFloors()));
             }
         }
