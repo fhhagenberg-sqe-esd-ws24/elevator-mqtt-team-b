@@ -18,13 +18,22 @@ package at.fhhagenberg.sqelevator;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.Arrays;
+import org.eclipse.paho.mqttv5.client.MqttClient;
+import org.eclipse.paho.mqttv5.client.MqttConnectionOptions;
+import org.eclipse.paho.mqttv5.common.MqttMessage;
+import org.eclipse.paho.mqttv5.common.MqttException;
+import org.eclipse.paho.mqttv5.client.persist.MemoryPersistence;
 
 public class ElevatorManager {
     private ElevatorSystem elevatorSystem;
     private Timer timer;
-
-    public ElevatorManager(IElevator plc) throws java.rmi.RemoteException {
-                
+    private MqttClient mqttClient;
+    private String clinetId = "Elevator";
+    
+    public ElevatorManager(IElevator plc) throws java.rmi.RemoteException, MqttException {
+        // Initialize the MQTT client 
+        mqttClient = new MqttClient("tcp://localhost:1883", clinetId, new MemoryPersistence());
+                       
         // Create elevator system and publish initial values BEFORE reading values from PLC
         this.elevatorSystem = new ElevatorSystem(plc);
         initialPublish();
@@ -32,31 +41,42 @@ public class ElevatorManager {
         
         // Create polling timer task
         this.timer = new Timer(true); // Timer runs as a daemon thread
-        
-        // start transmit data when update
-        startPolling();
     }
 
-    private void startPolling() {
-        timer.scheduleAtFixedRate(new TimerTask() {
-            @Override
-            public void run() {
-                try {
-                    elevatorSystem.updateElevators();
-                    publishChanges();
-                } catch (java.rmi.RemoteException e) {
-                    e.printStackTrace();
-                }
-            }
-        }, 0, 100); // Schedule task every 100ms
+    public void startPolling() throws MqttException {
+	    // connect to mqtt
+	    MqttConnectionOptions options = new MqttConnectionOptions();
+	    options.setAutomaticReconnect(true);
+	    options.setCleanStart(true);  
+	 
+	    mqttClient.connect(options);
+	    	
+		timer.scheduleAtFixedRate(new TimerTask() {
+		    @Override
+		    public void run() {
+		        try {
+		            elevatorSystem.updateElevators();
+		            publishChanges();
+		        } catch (java.rmi.RemoteException e) {
+		            e.printStackTrace();
+		        }
+		    }
+		}, 0, 100); // Schedule task every 100ms
     }
 
     public ElevatorSystem getElevatorSystem() {
         return elevatorSystem;
     }
 
-    public void stopPolling() {
+    public void stopPolling() { 
         timer.cancel();
+        if (mqttClient.isConnected()) {
+            try {
+                mqttClient.disconnect();
+            } catch (MqttException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     private void initialPublish()
@@ -124,7 +144,15 @@ public class ElevatorManager {
 
     // Utility method for publishing MQTT messages
     private void publishToMQTT(String topic, String messageContent) {
-        //MqttMessage message = new MqttMessage(messageContent.getBytes());
-        //mqttClient.publish(topic, message);
+    	try {
+            if (mqttClient.isConnected()) {
+                MqttMessage message = new MqttMessage(messageContent.getBytes());
+                message.setQos(1); //at least once delivery
+                message.setRetained(true); // Set retain flag to true
+                mqttClient.publish(topic, message);
+            }
+        } catch (MqttException e) {
+            e.printStackTrace();
+        }
     }
 }
