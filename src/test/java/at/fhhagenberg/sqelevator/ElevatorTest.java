@@ -154,4 +154,32 @@ public class ElevatorTest {
         // Assert that floor buttons have changed
         assertTrue(elevator.haveElevatorButtonsChanged());
     }
+
+    @Test
+    public void testArraySafety() {
+        // Ensure returned arrays are clones and modifications don't affect internal state
+        boolean[] buttons = elevator.getElevatorButtons();
+        boolean[] floors = elevator.getServiceFloors();
+
+        // Modify cloned arrays
+        buttons[0] = true;
+        floors[0] = true;
+
+        // Fetch arrays again and check that internal state is unchanged
+        assertFalse(elevator.getElevatorButtons()[0]);
+        assertFalse(elevator.getServiceFloors()[0]);
+    }
+
+    @Test
+    public void testPlcFailureHandling() {
+        try {
+            // Simulate PLC failure by throwing an exception
+            doThrow(new java.rmi.RemoteException()).when(mockPlc).getCommittedDirection(1);
+            elevator.updateFromPLC(mockPlc);
+        } catch (Exception e) {
+            // Ensure no state change is detected after failure
+            assertFalse(elevator.hasStateChanged());
+        }
+    }
+
 }

@@ -35,6 +35,7 @@ public class ElevatorSystemTest {
         // Mock PLC returns 2 elevators and 5 floors
         when(mockPlc.getElevatorNum()).thenReturn(2);
         when(mockPlc.getFloorNum()).thenReturn(5);
+        when(mockPlc.getFloorHeight()).thenReturn(14);
 
         // Create an ElevatorSystem with 2 elevators and 5 floors
         elevatorSystem = new ElevatorSystem(mockPlc);
@@ -44,6 +45,9 @@ public class ElevatorSystemTest {
     public void testElevatorSystemInitialization() {
         // Check that the system initializes with the correct number of elevators
         assertEquals(2, elevatorSystem.getElevators().size());
+        assertEquals(2, elevatorSystem.getNumElevator());
+        assertEquals(5, elevatorSystem.getNumFloors());
+        assertEquals(14, elevatorSystem.getFloorHeight());
 
         // Check that each elevator has the correct elevator number
         assertEquals(0, elevatorSystem.getElevators().get(0).getElevatorNumber());
