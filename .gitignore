@@ -1,7 +1,6 @@
 ########
 # Maven
 ########
-target/
 pom.xml.tag
 pom.xml.releaseBackup
 pom.xml.versionsBackup
@@ -56,8 +55,13 @@ local.properties
 # PDT-specific (PHP Development Tools)
 .buildpath
 
-# sbteclipse plugin
-.target
+# Ignore everything in the target directory
+target/**
+
+# Allow site/apidocs folder within target
+!target/site
+!target/site/**
+!target/site/apidocs/
 
 # Tern plugin
 .tern-project
