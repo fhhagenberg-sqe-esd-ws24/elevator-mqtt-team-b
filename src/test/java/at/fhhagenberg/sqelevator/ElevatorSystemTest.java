@@ -89,4 +89,5 @@ public class ElevatorSystemTest {
         assertTrue(elevator.hasCommittedDirectionChanged());
         assertEquals(IElevator.ELEVATOR_DIRECTION_UP, elevatorSystem.getElevators().get(0).getCommittedDirection());
     }
+    
 }
