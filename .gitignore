@@ -60,7 +60,6 @@ target/**
 
 # Allow site/apidocs folder within target
 !target/site
-!target/site/**
 !target/site/apidocs/
 
 # Tern plugin
