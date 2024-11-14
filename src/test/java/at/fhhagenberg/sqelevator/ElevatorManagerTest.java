@@ -33,7 +33,6 @@ public class ElevatorManagerTest {
     private IElevator mockPLC;
     private MqttClient mqttClient;
     
-    /*
     @BeforeEach
     public void setUp() throws Exception {
         // Create a mock PLC
@@ -53,7 +52,7 @@ public class ElevatorManagerTest {
     public void testDummyMqttConnection() throws Exception {
     	
     }
-    */
+    
 /*
     @Test
     public void testInitialPublish() throws Exception {

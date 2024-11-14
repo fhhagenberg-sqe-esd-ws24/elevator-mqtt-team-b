@@ -18,6 +18,9 @@ package at.fhhagenberg.sqelevator;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.Arrays;
+import java.util.Properties;
+import java.io.InputStream;
+import java.io.IOException;
 import org.eclipse.paho.mqttv5.client.MqttClient;
 import org.eclipse.paho.mqttv5.client.MqttConnectionOptions;
 import org.eclipse.paho.mqttv5.common.MqttMessage;
@@ -28,12 +31,27 @@ public class ElevatorManager {
     private ElevatorSystem elevatorSystem;
     private Timer timer;
     private MqttClient mqttClient;
-    private String clinetId = "Elevator";
-    
-    public ElevatorManager(IElevator plc) throws java.rmi.RemoteException, MqttException {
+    private String clientId = "Elevator";
+    private String mqttUrl;
+    private long timerPeriod;
+
+    public ElevatorManager(IElevator plc) throws java.rmi.RemoteException, MqttException, IOException {
+        // Load properties from app.properties file
+        Properties properties = new Properties();
+        try (InputStream input = getClass().getClassLoader().getResourceAsStream("app.properties")) {
+            if (input == null) {
+                throw new IOException("Unable to find app.properties");
+            }
+            properties.load(input);
+        }
+
+        // Get properties
+        mqttUrl = properties.getProperty("mqtt.url", "tcp://localhost:1883");
+        timerPeriod = Long.parseLong(properties.getProperty("timer.period", "100"));
+
         // Initialize the MQTT client 
-        mqttClient = new MqttClient("tcp://localhost:1883", clinetId, new MemoryPersistence());
-                       
+        mqttClient = new MqttClient(mqttUrl, clientId, new MemoryPersistence());
+
         // Create elevator system and publish initial values BEFORE reading values from PLC
         this.elevatorSystem = new ElevatorSystem(plc);
         
@@ -62,7 +80,7 @@ public class ElevatorManager {
 		            e.printStackTrace();
 		        }
 		    }
-		}, 0, 100); // Schedule task every 100ms
+        }, 0, timerPeriod); // Schedule task with configurable period
     }
 
     public ElevatorSystem getElevatorSystem() {
