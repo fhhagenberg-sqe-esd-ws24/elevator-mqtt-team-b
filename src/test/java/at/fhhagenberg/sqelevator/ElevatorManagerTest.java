@@ -27,19 +27,32 @@ import org.mockito.Mockito;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Properties;
+
 public class ElevatorManagerTest {
 
     private ElevatorManager elevatorManager;
     private IElevator mockPLC;
-    private MqttClient mqttClient;
+    //private MqttClient mqttClient;
     
     @BeforeEach
     public void setUp() throws Exception {
         // Create a mock PLC
         mockPLC = mock(IElevator.class);
+              
+        // Load properties from app.properties file
+        Properties properties = new Properties();
+        try (InputStream input = getClass().getClassLoader().getResourceAsStream("app.properties")) {
+            if (input == null) {
+                throw new IOException("Unable to find app.properties");
+            }
+            properties.load(input);
+        }
         
         // Initialize ElevatorManager with the mocked PLC
-        elevatorManager = new ElevatorManager(mockPLC);    
+        elevatorManager = new ElevatorManager(mockPLC, properties);    
         elevatorManager.startPolling();
     }
 

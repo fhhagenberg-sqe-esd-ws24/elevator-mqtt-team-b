@@ -35,16 +35,7 @@ public class ElevatorManager {
     private String mqttUrl;
     private long timerPeriod;
 
-    public ElevatorManager(IElevator plc) throws java.rmi.RemoteException, MqttException, IOException {
-        // Load properties from app.properties file
-        Properties properties = new Properties();
-        try (InputStream input = getClass().getClassLoader().getResourceAsStream("app.properties")) {
-            if (input == null) {
-                throw new IOException("Unable to find app.properties");
-            }
-            properties.load(input);
-        }
-
+    public ElevatorManager(IElevator plc, Properties properties) throws java.rmi.RemoteException, MqttException, IOException {
         // Get properties
         mqttUrl = properties.getProperty("mqtt.url", "tcp://localhost:1883");
         timerPeriod = Long.parseLong(properties.getProperty("timer.period", "100"));
