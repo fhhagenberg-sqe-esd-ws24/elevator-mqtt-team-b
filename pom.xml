@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>at.fhhagenberg.sqelevator-teamb</groupId>
-    <artifactId>mqtt-elevator</artifactId>
+    <artifactId>mqtt-elevator-teamb</artifactId>
     <version>0.0.1-SNAPSHOT</version>
 
     <properties>
