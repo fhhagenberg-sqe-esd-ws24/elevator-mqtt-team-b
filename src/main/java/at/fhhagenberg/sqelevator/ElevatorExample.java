@@ -2,22 +2,33 @@ package at.fhhagenberg.sqelevator;
 
 import java.rmi.Naming;
 import java.rmi.RemoteException;
+import java.util.Properties;
 
 
 public class ElevatorExample {
 
 	private IElevator controller;
+	private static Properties properties;
+    private static ElevatorManager elevatorManager;
 
 	public ElevatorExample(IElevator controller) {
 		this.controller = controller;
 	}
 
 	public static void main(String[] args) {
-
+		
 		try {
-			IElevator controller = (IElevator) Naming.lookup("rmi://localhost/ElevatorSim");
-			ElevatorExample client = new ElevatorExample(controller);
-
+			// Set up properties with dynamic MQTT broker URL
+	        properties = new Properties();
+	        // get the plc url
+	        String plcUrl = properties.getProperty("plc.url", "rmi://localhost/ElevatorSim");
+	        IElevator controller = (IElevator) Naming.lookup(plcUrl);
+		    ElevatorExample client = new ElevatorExample(controller);
+		
+			// Initialize ElevatorManager with mocked IElevator and properties
+		    elevatorManager = new ElevatorManager(controller, properties);
+		    elevatorManager.startPolling();
+        
 			client.displayElevatorSettings();
 			client.runExample();
 
