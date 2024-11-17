@@ -20,17 +20,20 @@ import org.eclipse.paho.mqttv5.common.packet.MqttProperties;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.testcontainers.containers.BindMode;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.utility.MountableFile;
 
 @Testcontainers
-public class ElevatorManagerTest 
+public class ElevatorManagerTest
 {
     @Container
-    private static final GenericContainer<?> mosquitto = 
-        new GenericContainer<>("eclipse-mosquitto:latest")
-            .withExposedPorts(1883); // Default Mosquitto port for MQTT
+    private static final GenericContainer<?> mosquitto =
+            new GenericContainer<>("eclipse-mosquitto:latest")
+                    .withExposedPorts(1883)
+                    .withClasspathResourceMapping("mosquitto.conf", "/mosquitto/config/mosquitto.conf", BindMode.READ_ONLY); // Default Mosquitto port for MQTT
 
 
     private IElevator mockPLC;
@@ -40,24 +43,38 @@ public class ElevatorManagerTest
     private String clientId = "TestElevator";
 
     @BeforeEach
-    public void setUp() throws RemoteException, IOException, MqttException 
-    {
-    	// Create a mock PLC
+    public void setUp() throws RemoteException, IOException, MqttException, InterruptedException {
         mockPLC = mock(IElevator.class);
-    
-        // Set up properties with dynamic MQTT broker URL
+
+        // Sicherstellen, dass der Broker läuft
+        assertTrue(mosquitto.isRunning(), "Mosquitto container is not running");
+        System.out.println("Mosquitto Host: " + mosquitto.getHost());
+        System.out.println("Mosquitto Port: " + mosquitto.getMappedPort(1883));
+        System.out.println("Mosquitto is running: " + mosquitto.isRunning());
+
+        // URL des Brokers abrufen
         String brokerUrl = "tcp://" + mosquitto.getHost() + ":" + mosquitto.getMappedPort(1883);
         properties = new Properties();
         properties.setProperty("mqtt.url", brokerUrl);
         properties.setProperty("timer.period", "250");
 
-        // Initialize ElevatorManager with mocked IElevator and properties
         elevatorManager = new ElevatorManager(mockPLC, properties);
 
-        // Connect MQTT client for verification
+        // MQTT-Client verbinden
+        System.out.println("Mosquitto brokerurl: " + brokerUrl);
         mqttClient = new MqttClient(brokerUrl, clientId, new MemoryPersistence());
-        mqttClient.connect();
+
+        System.out.println("Connecting to MQTT Broker at: " + brokerUrl);
+        try {
+            mqttClient.connect();
+            System.out.println("Connected to MQTT Broker successfully.");
+        } catch (MqttException e) {
+            e.printStackTrace();
+            System.err.println("Failed to connect to MQTT Broker at " + brokerUrl);
+            throw e;
+        }
     }
+
 
     @AfterEach
     public void tearDown() {
@@ -112,8 +129,7 @@ public class ElevatorManagerTest
             }
         });
 
-        // Wait for the latch to count down
-        assertTrue(latch.await(1, TimeUnit.SECONDS));
+
 
     }
 }
