@@ -1,110 +1,127 @@
-/*! **MH-Moduleheader*****************************************************
- *  Project:    Uebung 01
-
- *  Department: FH Hagenberg
- ** **********************************************************************
- *
- *  \file      ElevatorTest.java
- *  \details
- *  \author    Bauernfeind, Goldberger, Stellnberger
- *  \version   0.1
- *  \date      2024
- *  \remarks
- *
-** *********************************************************************/
-
-
 package at.fhhagenberg.sqelevator;
+
+import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.io.IOException;
+import java.util.Properties;
+import java.rmi.RemoteException;
+
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import org.eclipse.paho.mqttv5.client.MqttClient;
 import org.eclipse.paho.mqttv5.common.MqttException;
+import org.eclipse.paho.mqttv5.common.MqttMessage;
 import org.eclipse.paho.mqttv5.client.persist.MemoryPersistence;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 import org.mockito.Mockito;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.*;
+@Testcontainers
+public class ElevatorManagerTest 
+{
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Properties;
-
-public class ElevatorManagerTest {
-
-    private ElevatorManager elevatorManager;
+    @Container
+    private GenericContainer<?> mosquitto;
     private IElevator mockPLC;
-    //private MqttClient mqttClient;
-    
+    private Properties properties;
+    private ElevatorManager elevatorManager;
+    private MqttClient mqttClient;
+    private String clientId = "TestElevator";
+
     @BeforeEach
-    public void setUp() throws Exception {
-        // Create a mock PLC
+    public void setUp() throws RemoteException, IOException, MqttException 
+    {
+    	// Create a mock PLC
         mockPLC = mock(IElevator.class);
-              
-        // Load properties from app.properties file
-        Properties properties = new Properties();
-        try (InputStream input = getClass().getClassLoader().getResourceAsStream("app.properties")) {
-            if (input == null) {
-                throw new IOException("Unable to find app.properties");
-            }
-            properties.load(input);
-        }
-        
-        // Initialize ElevatorManager with the mocked PLC
-        elevatorManager = new ElevatorManager(mockPLC, properties);    
-        elevatorManager.startPolling();
+    
+        // Create a Mosquitto container
+        mosquitto = new GenericContainer<>("eclipse-mosquitto:latest").withExposedPorts(1883); 
+
+        // Set up properties with dynamic MQTT broker URL
+        properties = new Properties();
+        String brokerUrl = "tcp://" + mosquitto.getHost() + ":" + mosquitto.getMappedPort(1883);
+        properties.setProperty("mqtt.url", brokerUrl);
+        properties.setProperty("timer.period", "250");
+
+        // Initialize ElevatorManager with mocked IElevator and properties
+        elevatorManager = new ElevatorManager(mockPLC, properties);
+
+        // Connect MQTT client for verification
+        mqttClient = new MqttClient(brokerUrl, clientId);
+        mqttClient.connect();
     }
 
     @AfterEach
     public void tearDown() {
-        elevatorManager.stopPolling();
-    }
-    
-    @Test
-    public void testDummyMqttConnection() throws Exception {
-    	
-    }
-    
-/*
-    @Test
-    public void testInitialPublish() throws Exception {
-        // Set up the mock PLC to return expected values
-        //when(mockPLC.getElevatorCount()).thenReturn(2);
-        //when(mockPLC.getFloorCount()).thenReturn(5);
-        when(mockPLC.getFloorHeight()).thenReturn(3);
-
-        
-        // Here we would normally check the MQTT broker, but for demonstration
-        // we will assume you have a method to capture the published messages.
-        String numElevatorMessage = mqttClient.getTopic("system/numElevator").getQos();
-        String numFloorsMessage = mqttClient.getTopic("system/numFloors").getQos();
-        String floorHeightMessage = mqttClient.getTopic("system/floorHeight").getQos();
-        
-        // Verify that the published messages match the expected values
-        assertEquals("2", numElevatorMessage);
-        assertEquals("5", numFloorsMessage);
-        assertEquals("3", floorHeightMessage);
+        // Stop and remove the container
+        if (mosquitto.isRunning()) {
+            mosquitto.stop();
+        }
+        if (mosquitto != null) {
+            mosquitto.close();
+        }
     }
 
+
+
     @Test
-    public void testPublishChanges() throws Exception {
-        // Set up the mock PLC to simulate elevator state changes
-        Elevator mockElevator = mock(Elevator.class);
-        when(mockElevator.getElevatorNumber()).thenReturn(1);
-        when(mockElevator.hasCurrentFloorChanged()).thenReturn(true);
-        when(mockElevator.getCurrentFloor()).thenReturn(3);
+    public void testPublishSystemTopics() throws Exception {
+        // Trigger state update in ElevatorManager
+        elevatorManager.startPolling();
+
+        // Verify system topics are published
+        MqttMessage numElevatorMessage = mqttClient.getTopic("system/numElevator").receive();
+        assertNotNull(numElevatorMessage);
+        assertEquals("2", new String(numElevatorMessage.getPayload()));
+
+        MqttMessage numFloorsMessage = mqttClient.getTopic("system/numFloors").receive();
+        assertNotNull(numFloorsMessage);
+        assertEquals("5", new String(numFloorsMessage.getPayload()));
+
+
         
-        elevatorManager.getElevatorSystem().addElevator(mockElevator);
-        
-        // Call publishChanges to send updated state to MQTT
-        elevatorManager.publishChanges();
-        
-        // Similar to before, we would check the published message
-        String currentFloorMessage = mqttClient.getTopic("system/elevator/1/currentFloor").getQos();
-        
-        // Verify that the published message matches the expected value
-        assertEquals("3", currentFloorMessage);
+        // Use a CountDownLatch to wait for MQTT messages asynchronously
+        CountDownLatch latch = new CountDownLatch(2);
+        String[] receivedMessages = new String[2];
+
+        mqttClient.subscribe("system/numElevator", (topic, message) -> 
+        {
+            receivedMessages[0] = new String(message.getPayload());
+            latch.countDown();
+        });
+
+        mqttClient.subscribe("system/numFloors", (topic, message) -> 
+        {
+            receivedMessages[1] = new String(message.getPayload());
+            latch.countDown();
+        });
+
+        // Trigger state update in ElevatorManager
+        elevatorManager.startPolling();
+
+        // Wait for the messages to be received
+        boolean allMessagesReceived = latch.await(5, TimeUnit.SECONDS);
+        assertTrue(allMessagesReceived, "Messages were not received in time");
+
+        // Verify the content of the messages
+        assertEquals("2", receivedMessages[0], "Incorrect number of elevators published");
+        assertEquals("5", receivedMessages[1], "Incorrect number of floors published");
     }
-    */
+
+
+    @Test
+    public void testStartPolling() throws MqttException
+    {
+        // Start polling
+        elevatorManager.startPolling();
+        
+    }
+
+    // Add more tests to cover other scenarios
 }

@@ -32,12 +32,12 @@ public class ElevatorManager {
     private Timer timer;
     private MqttClient mqttClient;
     private String clientId = "Elevator";
-    private String mqttUrl;
     private long timerPeriod;
 
-    public ElevatorManager(IElevator plc, Properties properties) throws java.rmi.RemoteException, MqttException, IOException {
+    public ElevatorManager(IElevator plc, Properties properties) throws java.rmi.RemoteException, MqttException, IOException 
+    {
         // Get properties
-        mqttUrl = properties.getProperty("mqtt.url", "tcp://localhost:1883");
+        String mqttUrl = properties.getProperty("mqtt.url", "tcp://localhost:1883");
         timerPeriod = Long.parseLong(properties.getProperty("timer.period", "100"));
 
         // Initialize the MQTT client 
@@ -74,6 +74,8 @@ public class ElevatorManager {
         }, 0, timerPeriod); // Schedule task with configurable period
     }
 
+    
+    // TODO do we need this?
     public ElevatorSystem getElevatorSystem() {
         return elevatorSystem;
     }
