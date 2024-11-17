@@ -16,6 +16,7 @@
 package at.fhhagenberg.sqelevator;
 
 import java.util.List;
+import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -40,7 +41,7 @@ public class ElevatorSystem {
         this.elevators = new ArrayList<>();
         
         for (int i = 0; i < numElevators; i++) {
-            this.elevators.add(new Elevator(i, numFloors));
+            this.elevators.add(new Elevator(plc, i, numFloors));
         }
         
         this.floorButtonUp = new boolean[numFloors];
@@ -100,7 +101,29 @@ public class ElevatorSystem {
         }
         
         for (Elevator elevator : elevators) {
-            elevator.updateFromPLC(plc);
+            elevator.updateFromPLC();
         }
+    }
+    
+    public void setCommittedDirection(int elevatorNumber, int direction) throws RemoteException {
+    	
+    	if(plc.getCommittedDirection(elevatorNumber) != direction)
+    	{
+    		plc.setCommittedDirection(elevatorNumber, direction);    		
+    	}  	
+    }
+    
+    public void setServicesFloors(int elevatorNumber, int floor, boolean service) throws RemoteException {
+    	if(plc.getServicesFloors(elevatorNumber, floor) != service)
+    	{
+    		plc.setServicesFloors(elevatorNumber, floor, service);
+    	}
+    }
+    
+    public void setTarget(int elevatorNumber, int target) throws RemoteException {
+    	if(plc.getTarget(elevatorNumber) != target)
+    	{
+    		plc.setTarget(elevatorNumber, target);
+    	}
     }
 }

@@ -18,6 +18,8 @@ package at.fhhagenberg.sqelevator;
 import java.util.Arrays;
 
 public class Elevator {
+	private IElevator plc;
+	
     private int elevatorNumber;
     private int committedDirection;
     private int acceleration;
@@ -43,7 +45,8 @@ public class Elevator {
     private boolean[] prevElevatorButtons = null;
     private boolean[] prevServiceFloors = null;
 
-    public Elevator(int elevatorNumber, int numFloors) {
+    public Elevator(IElevator plc, int elevatorNumber, int numFloors) {
+    	this.plc = plc;
         this.elevatorNumber = elevatorNumber;
         this.elevatorButtons = new boolean[numFloors];
         this.serviceFloors = new boolean[numFloors];
@@ -107,7 +110,7 @@ public class Elevator {
     }
 
     // Update the elevator state from the PLC
-    public void updateFromPLC(IElevator plc) throws java.rmi.RemoteException {
+    public void updateFromPLC() throws java.rmi.RemoteException {
         // Store the previous state before updating
         prevCommittedDirection = committedDirection;
         prevAcceleration = acceleration;
