@@ -31,7 +31,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 
-public class ElevatorManagerTest {
+
+// This test uses a real MQTT broker
+
+public class ElevatorManagerSystemTest {
 
     private ElevatorManager elevatorManager;
     private IElevator mockPLC;
@@ -61,11 +64,11 @@ public class ElevatorManagerTest {
         elevatorManager.stopPolling();
     }
     
-    @Test
+   /* @Test
     public void testDummyMqttConnection() throws Exception {
     	
     }
-    
+    */
 /*
     @Test
     public void testInitialPublish() throws Exception {
