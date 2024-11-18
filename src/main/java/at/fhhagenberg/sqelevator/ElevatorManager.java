@@ -78,12 +78,6 @@ public class ElevatorManager {
         }, 0, timerPeriod); // Schedule task with configurable period
     }
 
-    
-    // TODO do we need this?
-    public ElevatorSystem getElevatorSystem() {
-        return elevatorSystem;
-    }
-
     public void stopPolling() { 
         timer.cancel();
         if (mqttClient.isConnected()) {
@@ -101,7 +95,10 @@ public class ElevatorManager {
     	publishToMQTT("system/numFloors", String.valueOf(elevatorSystem.getNumFloors()));	    	
     	publishToMQTT("system/floorHeight", String.valueOf(elevatorSystem.getFloorHeight()));	
     	
-    	//TODO publish capacity that also do not change
+    	for (Elevator elevator : elevatorSystem.getElevators()) {
+            int elevatorNumber = elevator.getElevatorNumber();
+            publishToMQTT("system/elevator/" + elevatorNumber + "/capacity", String.valueOf(elevator.getCapacity()));       
+    	}
     	
         publishChanges(true);
     }
@@ -211,32 +208,31 @@ public class ElevatorManager {
         });
 
         // Subscribe to relevant topics
-        mqttClient.subscribe("system/elevator/+/committedDirection", 2);
-        mqttClient.subscribe("system/elevator/+/serviceFloor/+", 2);
-        mqttClient.subscribe("system/elevator/+/target", 2);
+        mqttClient.subscribe("system/elevator/set/+/committedDirection", 2);
+        mqttClient.subscribe("system/elevator/set/+/serviceFloor/+", 2);
+        mqttClient.subscribe("system/elevator/set/+/target", 2);
     }
     
     private void handleIncomingMessage(String topic, MqttMessage message) {
     	System.out.println("Incomming message: " + topic + message);
         try {
             String[] parts = topic.split("/");
-            if (parts.length < 4) {
+            if (parts.length < 5) {
                 System.err.println("Invalid topic: " + topic);
                 return;
             }
 
-            int elevatorNumber = Integer.parseInt(parts[2]);
+            int elevatorNumber = Integer.parseInt(parts[3]);
             
-
-            switch (parts[3]) {
+            switch (parts[4]) {
                 case "committedDirection":
                     int direction = Integer.parseInt(new String(message.getPayload()));
                     elevatorSystem.setCommittedDirection(elevatorNumber, direction);
                     break;
 
                 case "serviceFloor":
-                    if (parts.length == 5) {
-                        int floor = Integer.parseInt(parts[4]);
+                    if (parts.length == 6) {
+                        int floor = Integer.parseInt(parts[5]);
                         boolean service = Boolean.parseBoolean(new String(message.getPayload()));
                         elevatorSystem.setServicesFloors(elevatorNumber, floor, service);
                     }

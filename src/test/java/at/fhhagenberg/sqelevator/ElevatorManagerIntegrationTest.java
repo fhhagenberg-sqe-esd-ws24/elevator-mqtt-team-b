@@ -64,10 +64,11 @@ public class ElevatorManagerIntegrationTest {
         when(mockPLC.getElevatorSpeed(0)).thenReturn(6);
         when(mockPLC.getElevatorWeight(0)).thenReturn(7);
         when(mockPLC.getTarget(0)).thenReturn(8);
-        when(mockPLC.getElevatorButton(0,0)).thenReturn(true);
-        when(mockPLC.getElevatorButton(0,1)).thenReturn(false);
-        when(mockPLC.getServicesFloors(0,0)).thenReturn(false);
-        when(mockPLC.getServicesFloors(0,1)).thenReturn(true);
+        when(mockPLC.getElevatorCapacity(0)).thenReturn(9);
+        when(mockPLC.getElevatorButton(0,0)).thenReturn(false);
+        when(mockPLC.getElevatorButton(0,1)).thenReturn(true);
+        when(mockPLC.getServicesFloors(0,0)).thenReturn(true);
+        when(mockPLC.getServicesFloors(0,1)).thenReturn(false);
 
         // Set up properties
         properties = new Properties();
@@ -83,16 +84,22 @@ public class ElevatorManagerIntegrationTest {
     }
 
     @AfterEach
-    public void tearDown() {
+    public void tearDown() throws MqttException {
+    	
+    	if (mqttClient.isConnected()) {
+            mqttClient.disconnect();
+            mqttClient.close();
+        }
         if (hiveMQContainer.isRunning()) {
             hiveMQContainer.stop();
+            hiveMQContainer.close();
         }
     }
 
     @Test
     public void testPublishInitialSystemTopics() throws Exception {
-    	String[] topics = {"system/numElevator", "system/numFloors", "system/floorHeight"};
-        String[] expectedMessages = {"1", "2", "3"};      
+    	String[] topics = {"system/numElevator", "system/numFloors", "system/floorHeight", "system/elevator/0/capacity"};
+        String[] expectedMessages = {"1", "2", "3", "9"};      
 
         // Prepare a latch to wait for messages
         CountDownLatch latch = new CountDownLatch(topics.length);
@@ -200,7 +207,7 @@ public class ElevatorManagerIntegrationTest {
 			"system/elevator/0/serviceFloors"
         };
 
-        String[] expectedMessages = {"1", "2", "3", "4", "5", "6", "7", "8", "[true, false]", "[false, true]"};
+        String[] expectedMessages = {"1", "2", "3", "4", "5", "6", "7", "8", "[false, true]", "[true, false]"};
 
         // Prepare MQTT callback
         CountDownLatch latch = new CountDownLatch(topics.length);
@@ -208,7 +215,7 @@ public class ElevatorManagerIntegrationTest {
             @Override
             public void messageArrived(String topic, MqttMessage message) throws Exception {
                 for (int i = 0; i < topics.length; i++) {
-                	//System.out.println("Received message: " + new String(message.getPayload()) + " on topic: " + topic);
+                	System.out.println("Received message: " + new String(message.getPayload()) + " on topic: " + topic);
                     if (topic.equals(topics[i]) && new String(message.getPayload()).equals(expectedMessages[i])) {
                         latch.countDown();
                     }
@@ -243,5 +250,52 @@ public class ElevatorManagerIntegrationTest {
         assertTrue(latch.await(5, TimeUnit.SECONDS));
     }
     
+    @Test
+    public void testSubscribeCommitedDirection() throws Exception {
+        // Connect MQTT
+        elevatorManager.startPolling();
+
+        // Publish test message
+        String topic = "system/elevator/set/0/committedDirection";
+        String payload = "5";        
+        MqttMessage message = new MqttMessage(payload.getBytes());
+        mqttClient.publish(topic, message);
+
+        Thread.sleep(1000);
+
+        verify(mockPLC, times(1)).setCommittedDirection(0, 5);
+    }
+    
+    @Test
+    public void testSubscribeServiceFloors() throws Exception {
+        // Connect MQTT
+        elevatorManager.startPolling();
+
+        // Publish test message
+        String topic = "system/elevator/set/0/serviceFloor/1";
+        String payload = "true";        
+        MqttMessage message = new MqttMessage(payload.getBytes());
+        mqttClient.publish(topic, message);
+
+        Thread.sleep(1000);
+
+        verify(mockPLC, times(1)).setServicesFloors(0, 1, true);
+    }
+        
+    @Test
+    public void testSubscribeTargetFloors() throws Exception {
+        // Connect MQTT
+        elevatorManager.startPolling();
+
+        // Publish test message
+        String topic = "system/elevator/set/0/target";
+        String payload = "5";        
+        MqttMessage message = new MqttMessage(payload.getBytes());
+        mqttClient.publish(topic, message);
+
+        Thread.sleep(1000);
+
+        verify(mockPLC, times(1)).setTarget(0, 5);
+    }
           
 }

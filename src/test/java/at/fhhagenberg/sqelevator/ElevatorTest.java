@@ -91,7 +91,7 @@ public class ElevatorTest {
         assertEquals(10, elevator.getSpeed());
         assertEquals(500, elevator.getWeight());
         assertEquals(4, elevator.getTargetFloor());
-        assertEquals(10, elevator.getCapacity());
+
         for(int i = 0; i < 5; i++)
         {
         	assertEquals(false, elevator.getElevatorButtons()[i]);

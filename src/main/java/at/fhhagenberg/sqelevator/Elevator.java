@@ -15,6 +15,7 @@
 
 package at.fhhagenberg.sqelevator;
 
+import java.rmi.RemoteException;
 import java.util.Arrays;
 
 public class Elevator {
@@ -45,11 +46,12 @@ public class Elevator {
     private boolean[] prevElevatorButtons = null;
     private boolean[] prevServiceFloors = null;
 
-    public Elevator(IElevator plc, int elevatorNumber, int numFloors) {
+    public Elevator(IElevator plc, int elevatorNumber, int numFloors) throws RemoteException {
     	this.plc = plc;
         this.elevatorNumber = elevatorNumber;
         this.elevatorButtons = new boolean[numFloors];
         this.serviceFloors = new boolean[numFloors];
+        this.capacity = this.plc.getElevatorCapacity(elevatorNumber);
 
         // Initialize previous state arrays
         this.prevElevatorButtons = new boolean[numFloors];
@@ -58,6 +60,7 @@ public class Elevator {
         // Set prev initial values != current initial values to trigger hasChanged on first change
         Arrays.fill(this.prevElevatorButtons, true);
         Arrays.fill(this.prevServiceFloors, true);
+        
     }
 
     // Getters for each attribute
@@ -131,7 +134,6 @@ public class Elevator {
         position = plc.getElevatorPosition(elevatorNumber);
         speed = plc.getElevatorSpeed(elevatorNumber);
         weight = plc.getElevatorWeight(elevatorNumber);
-        capacity = plc.getElevatorCapacity(elevatorNumber);
         targetFloor = plc.getTarget(elevatorNumber);
 
         for (int i = 0; i < elevatorButtons.length; i++) {
