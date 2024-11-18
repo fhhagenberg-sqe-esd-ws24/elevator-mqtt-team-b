@@ -19,25 +19,28 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.Arrays;
 import java.util.Properties;
-import java.io.InputStream;
 import java.io.IOException;
 import org.eclipse.paho.mqttv5.client.MqttClient;
+import org.eclipse.paho.mqttv5.client.IMqttToken;
+import org.eclipse.paho.mqttv5.client.MqttCallback;
 import org.eclipse.paho.mqttv5.client.MqttConnectionOptions;
+import org.eclipse.paho.mqttv5.client.MqttDisconnectResponse;
 import org.eclipse.paho.mqttv5.common.MqttMessage;
 import org.eclipse.paho.mqttv5.common.MqttException;
 import org.eclipse.paho.mqttv5.client.persist.MemoryPersistence;
+import org.eclipse.paho.mqttv5.common.packet.MqttProperties;
 
 public class ElevatorManager {
     private ElevatorSystem elevatorSystem;
     private Timer timer;
     private MqttClient mqttClient;
     private String clientId = "Elevator";
-    private String mqttUrl;
     private long timerPeriod;
 
-    public ElevatorManager(IElevator plc, Properties properties) throws java.rmi.RemoteException, MqttException, IOException {
+    public ElevatorManager(IElevator plc, Properties properties) throws java.rmi.RemoteException, MqttException, IOException 
+    {
         // Get properties
-        mqttUrl = properties.getProperty("mqtt.url", "tcp://localhost:1883");
+        String mqttUrl = properties.getProperty("mqtt.url", "tcp://localhost:1883");
         timerPeriod = Long.parseLong(properties.getProperty("timer.period", "100"));
 
         // Initialize the MQTT client 
@@ -57,6 +60,7 @@ public class ElevatorManager {
 	    
 	    // connect to mqtt broker
 	    mqttClient.connect(options);
+	    startAsyncSubscription();
 	    
 	    // initial publish after connect
         initialPublish();
@@ -72,10 +76,6 @@ public class ElevatorManager {
 		        }
 		    }
         }, 0, timerPeriod); // Schedule task with configurable period
-    }
-
-    public ElevatorSystem getElevatorSystem() {
-        return elevatorSystem;
     }
 
     public void stopPolling() { 
@@ -94,6 +94,11 @@ public class ElevatorManager {
     	publishToMQTT("system/numElevator", String.valueOf(elevatorSystem.getNumElevator()));
     	publishToMQTT("system/numFloors", String.valueOf(elevatorSystem.getNumFloors()));	    	
     	publishToMQTT("system/floorHeight", String.valueOf(elevatorSystem.getFloorHeight()));	
+    	
+    	for (Elevator elevator : elevatorSystem.getElevators()) {
+            int elevatorNumber = elevator.getElevatorNumber();
+            publishToMQTT("system/elevator/" + elevatorNumber + "/capacity", String.valueOf(elevator.getCapacity()));       
+    	}
     	
         publishChanges(true);
     }
@@ -159,12 +164,91 @@ public class ElevatorManager {
     	try {
             if (mqttClient.isConnected()) {
                 MqttMessage message = new MqttMessage(messageContent.getBytes());
-                message.setQos(1); //at least once delivery
+                message.setQos(2); //exactly once delivery
                 message.setRetained(true); // Set retain flag to true
                 mqttClient.publish(topic, message);
             }
         } catch (MqttException e) {
             e.printStackTrace();
         }
+    }  
+    
+    // Register callback for incoming messages
+    private void startAsyncSubscription() throws MqttException {
+        mqttClient.setCallback(new MqttCallback() {
+             @Override
+            public void disconnected(MqttDisconnectResponse disconnectResponse) {
+                // Not used for subscriptions
+            }
+
+            @Override
+            public void mqttErrorOccurred(MqttException exception) {
+                exception.printStackTrace();
+            }
+
+            @Override
+            public void messageArrived(String topic, MqttMessage message) throws Exception {
+                handleIncomingMessage(topic, message);
+            }
+
+            @Override
+            public void deliveryComplete(IMqttToken token) {
+                // Not used for subscriptions
+            }
+
+            @Override
+            public void connectComplete(boolean reconnect, String serverURI) {
+                // Handle connection complete
+            }
+
+            @Override
+            public void authPacketArrived(int reasonCode, MqttProperties properties) {
+                // Handle auth packet arrived
+            }
+        });
+
+        // Subscribe to relevant topics
+        mqttClient.subscribe("system/elevator/set/+/committedDirection", 2);
+        mqttClient.subscribe("system/elevator/set/+/serviceFloor/+", 2);
+        mqttClient.subscribe("system/elevator/set/+/target", 2);
     }
+    
+    private void handleIncomingMessage(String topic, MqttMessage message) {
+    	System.out.println("Incomming message: " + topic + message);
+        try {
+            String[] parts = topic.split("/");
+            if (parts.length < 5) {
+                System.err.println("Invalid topic: " + topic);
+                return;
+            }
+
+            int elevatorNumber = Integer.parseInt(parts[3]);
+            
+            switch (parts[4]) {
+                case "committedDirection":
+                    int direction = Integer.parseInt(new String(message.getPayload()));
+                    elevatorSystem.setCommittedDirection(elevatorNumber, direction);
+                    break;
+
+                case "serviceFloor":
+                    if (parts.length == 6) {
+                        int floor = Integer.parseInt(parts[5]);
+                        boolean service = Boolean.parseBoolean(new String(message.getPayload()));
+                        elevatorSystem.setServicesFloors(elevatorNumber, floor, service);
+                    }
+                    break;
+
+                case "target":
+                    int target = Integer.parseInt(new String(message.getPayload()));
+                    elevatorSystem.setTarget(elevatorNumber, target);
+                    break;
+
+                default:
+                    System.err.println("Unhandled topic: " + topic);
+                    break;
+            }
+        } catch (NumberFormatException | java.rmi.RemoteException e) {
+            e.printStackTrace();
+        }  
+    }  
 }

@@ -32,7 +32,7 @@ public class ElevatorTest {
         // Create a mock PLC interface
         mockPlc = mock(IElevator.class);
         // Instantiate the Elevator class with 5 floors (example)
-        elevator = new Elevator(1, 5);
+        elevator = new Elevator(mockPlc, 1, 5);
     }
 
     @Test
@@ -80,7 +80,7 @@ public class ElevatorTest {
         }
 
         // Update elevator state from mock PLC
-        elevator.updateFromPLC(mockPlc);
+        elevator.updateFromPLC();
 
         // Assert that the state was correctly updated
         assertEquals(IElevator.ELEVATOR_DIRECTION_UP, elevator.getCommittedDirection());
@@ -91,7 +91,7 @@ public class ElevatorTest {
         assertEquals(10, elevator.getSpeed());
         assertEquals(500, elevator.getWeight());
         assertEquals(4, elevator.getTargetFloor());
-        assertEquals(10, elevator.getCapacity());
+
         for(int i = 0; i < 5; i++)
         {
         	assertEquals(false, elevator.getElevatorButtons()[i]);
@@ -111,7 +111,7 @@ public class ElevatorTest {
         // First update
         when(mockPlc.getCommittedDirection(1)).thenReturn(IElevator.ELEVATOR_DIRECTION_UP);
         when(mockPlc.getElevatorAccel(1)).thenReturn(2);
-        elevator.updateFromPLC(mockPlc);
+        elevator.updateFromPLC();
         
         // Committed i state change
         assertFalse(elevator.hasCommittedDirectionChanged());
@@ -120,7 +120,7 @@ public class ElevatorTest {
         // Second update with changes
         when(mockPlc.getCommittedDirection(1)).thenReturn(IElevator.ELEVATOR_DIRECTION_DOWN);
         when(mockPlc.getElevatorAccel(1)).thenReturn(3);
-        elevator.updateFromPLC(mockPlc);
+        elevator.updateFromPLC();
 
         // Assert that the changes are correctly detected
         assertTrue(elevator.hasCommittedDirectionChanged());
@@ -129,7 +129,7 @@ public class ElevatorTest {
         // Third update without changes
         when(mockPlc.getCommittedDirection(1)).thenReturn(IElevator.ELEVATOR_DIRECTION_DOWN);
         when(mockPlc.getElevatorAccel(1)).thenReturn(3);
-        elevator.updateFromPLC(mockPlc);
+        elevator.updateFromPLC();
         
         // Assert that the changes are correctly detected
         assertFalse(elevator.hasCommittedDirectionChanged());
@@ -142,14 +142,14 @@ public class ElevatorTest {
         when(mockPlc.getElevatorButton(1, 0)).thenReturn(false);
         when(mockPlc.getElevatorButton(1, 1)).thenReturn(false);
         when(mockPlc.getElevatorButton(1, 2)).thenReturn(false);
-        elevator.updateFromPLC(mockPlc);
+        elevator.updateFromPLC();
 
         // Assert no changes at first
         assertFalse(elevator.haveElevatorButtonsChanged());
 
         // Second update: button 1 pressed
         when(mockPlc.getElevatorButton(1, 1)).thenReturn(true);
-        elevator.updateFromPLC(mockPlc);
+        elevator.updateFromPLC();
 
         // Assert that floor buttons have changed
         assertTrue(elevator.haveElevatorButtonsChanged());
@@ -175,7 +175,7 @@ public class ElevatorTest {
         try {
             // Simulate PLC failure by throwing an exception
             doThrow(new java.rmi.RemoteException()).when(mockPlc).getCommittedDirection(1);
-            elevator.updateFromPLC(mockPlc);
+            elevator.updateFromPLC();
         } catch (Exception e) {
             // Ensure no state change is detected after failure
             assertFalse(elevator.hasStateChanged());

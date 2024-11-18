@@ -16,22 +16,19 @@
 
 package at.fhhagenberg.sqelevator;
 
-import org.eclipse.paho.mqttv5.client.MqttClient;
-import org.eclipse.paho.mqttv5.common.MqttException;
-import org.eclipse.paho.mqttv5.client.persist.MemoryPersistence;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 
-public class ElevatorManagerTest {
+
+// This test uses a real MQTT broker
+
+public class ElevatorManagerSystemTest {
 
     private ElevatorManager elevatorManager;
     private IElevator mockPLC;
@@ -61,11 +58,11 @@ public class ElevatorManagerTest {
         elevatorManager.stopPolling();
     }
     
-    @Test
+   /* @Test
     public void testDummyMqttConnection() throws Exception {
     	
     }
-    
+    */
 /*
     @Test
     public void testInitialPublish() throws Exception {
