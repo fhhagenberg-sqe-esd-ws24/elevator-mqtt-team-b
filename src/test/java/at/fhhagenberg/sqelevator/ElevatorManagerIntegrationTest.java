@@ -4,6 +4,7 @@ package at.fhhagenberg.sqelevator;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+import java.rmi.RemoteException;
 import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -296,6 +297,35 @@ public class ElevatorManagerIntegrationTest {
         Thread.sleep(1000);
 
         verify(mockPLC, times(1)).setTarget(0, 5);
+    }
+    
+    
+    @Test
+    public void testRMIExceptionHandling() throws Exception {
+        // Simulate RMI exception
+        doThrow(new RemoteException("Simulated RMI failure"))
+            .when(mockPLC)
+            .setCommittedDirection(anyInt(), anyInt());
+
+        // Connect MQTT
+        elevatorManager.startPolling();
+        
+        // Attempt to set committed direction
+        try {
+            // Publish test message
+            String topic = "system/elevator/set/0/committedDirection";
+            String payload = "5";        
+            MqttMessage message = new MqttMessage(payload.getBytes());
+            mqttClient.publish(topic, message);
+
+        } catch (Exception e) {
+            fail("Exception should have been handled internally, but was propagated.");
+        }
+
+        Thread.sleep(1000);
+
+        // Verify exception was logged and no retries were made
+        verify(mockPLC, times(1)).setCommittedDirection(0, 5);
     }
           
 }
