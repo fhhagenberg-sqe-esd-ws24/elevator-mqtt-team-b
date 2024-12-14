@@ -12,6 +12,7 @@ import org.eclipse.paho.mqttv5.common.MqttMessage;
 import org.eclipse.paho.mqttv5.common.packet.MqttProperties;
 
 import java.util.Arrays;
+import java.util.Objects;
 
 public class ElevatorMqttRouter {
 
@@ -20,14 +21,16 @@ public class ElevatorMqttRouter {
 	private int numElevators = 0;
 	private int numFloors = 0;
 	private int floorHeight = 0;
-	private int currentFloor = 0;
-	private boolean[] floorButtons = {false};
-	private boolean[] serviceFloors = {false};
+
 	private boolean[] buttonUp = {false};
 	private boolean[] buttonDown = {false};
+    private ElevatorState[] elevators;
+    private IElevatorAlgorithm algorithm;
 
-    public ElevatorMqttRouter(String brokerUrl, String clientId) throws MqttException {
+
+    public ElevatorMqttRouter(String brokerUrl, String clientId, IElevatorAlgorithm algorithm) throws MqttException {
         this.mqttClient = new MqttClient(brokerUrl, clientId,  new MemoryPersistence());
+        this.algorithm = algorithm;
     }
 
     public void connect() throws MqttException {
@@ -118,17 +121,39 @@ public class ElevatorMqttRouter {
 	        	isSetupPhase = parseContinousMessage(parts, new String(message.getPayload()));
 	        }
         } 
-        catch (NumberFormatException | MqttException e) 
+        catch (NumberFormatException e)
         {
             e.printStackTrace();
         }
     }
+
+    private void publishToMQTT(String topic, String messageContent) {
+        try {
+            if (mqttClient.isConnected()) {
+                MqttMessage message = new MqttMessage(messageContent.getBytes());
+                message.setQos(2); //exactly once delivery
+                message.setRetained(true); // Set retain flag to true
+                mqttClient.publish(topic, message);
+            }
+        } catch (MqttException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void publishChangedTopics(int elevatorIndex) {
+        if(elevators[elevatorIndex].hasDirectionChanged()) {
+            publishToMQTT("system/elevator/set/" + elevatorIndex + "/committedDirection", String.valueOf(elevators[elevatorIndex].direction.getValue()));
+        }
+        if(elevators[elevatorIndex].hasTargetFloorChanged()) {
+            publishToMQTT("system/elevator/set/" + elevatorIndex + "/target", String.valueOf(elevators[elevatorIndex].targetFloor));
+        }
+    }
     
-    private boolean parseSetupMessage(String [] mqttTopic, String mqttPayload) throws MqttException
+    private boolean parseSetupMessage(String [] mqttTopic, String mqttPayload)
     {
-    	if ((mqttTopic.length != 3) || (mqttPayload.length() < 1))
+    	if ((mqttTopic.length != 3) || (mqttPayload.isEmpty()))
     	{
-    		System.err.println("Unhandled setup message: " + mqttTopic);
+    		System.err.println("Unhandled setup message: " + Arrays.toString(mqttTopic));
     		return true;
     	}
     	
@@ -151,7 +176,15 @@ public class ElevatorMqttRouter {
         // Check if setup done is done
         if ((numElevators != 0) && (numFloors != 0) && (floorHeight != 0))
         {
-        	subscribeToContinousTopics();
+            try {
+                subscribeToContinousTopics();
+            } catch (MqttException e) {
+                e.printStackTrace();
+            }
+
+            for (int i = 0; i < numElevators; i++) {
+                elevators[i] = new ElevatorState(numFloors);
+            }
         	return false;
         }
         else
@@ -160,11 +193,11 @@ public class ElevatorMqttRouter {
         }
     }
    
-    private boolean parseContinousMessage(String[]mqttTopic, String mqttPayload) 
+    private boolean parseContinousMessage(String[]mqttTopic, String mqttPayload)
     {
     	String[] strPayload;
     	
-    	if (mqttTopic[1] == "elevator")
+    	if (Objects.equals(mqttTopic[1], "elevator"))
     	{
     		int elevatorNumber = Integer.parseInt(mqttTopic[2]);
     		
@@ -172,20 +205,20 @@ public class ElevatorMqttRouter {
             switch (mqttTopic[3])
             {
 	            case "currentFloor":
-	            	currentFloor = Integer.parseInt(mqttPayload);
+	            	elevators[elevatorNumber].currentFloor = Integer.parseInt(mqttPayload);
 	                break;
 	
 	            case "floorButtons":
 	            	strPayload = mqttPayload.split(",");
 	                for (int i = 0; i < strPayload.length; i++) {
-	                    floorButtons[i] = Boolean.parseBoolean(strPayload[i].trim());
+                        elevators[elevatorNumber].floorButtons[i] = Boolean.parseBoolean(strPayload[i].trim());
 	                }
 	                break;
 	
 	            case "serviceFloor":
 	            	strPayload = mqttPayload.split(",");
 	                for (int i = 0; i < strPayload.length; i++) {
-	                    serviceFloors[i] = Boolean.parseBoolean(strPayload[i].trim());
+                        elevators[elevatorNumber].serviceFloors[i] = Boolean.parseBoolean(strPayload[i].trim());
 	                }
 	                break;
 	
@@ -193,8 +226,12 @@ public class ElevatorMqttRouter {
 	                System.err.println("Unhandled topic: " + mqttTopic);
 	                break;
 	        }
+            algorithm.processRequests(elevators[elevatorNumber], elevators[elevatorNumber].floorButtons, elevators[elevatorNumber].serviceFloors, buttonUp, buttonDown);
+
+            publishChangedTopics(elevatorNumber);
+
     	}
-    	else if (mqttTopic[1] == "floor")
+    	else if (Objects.equals(mqttTopic[1], "floor"))
     	{
     		// Floor message
     		switch (mqttTopic[2]) 
@@ -215,8 +252,15 @@ public class ElevatorMqttRouter {
 	                System.err.println("Unhandled topic: " + mqttTopic);
 	                break;
 	        }
-    	}
 
+            for(int i = 0; i < numElevators; i++) {
+                if(elevators[i].direction == ElevatorState.eDirection.IDLE) {
+                    algorithm.processRequests(elevators[i], elevators[i].floorButtons, elevators[i].serviceFloors, buttonUp, buttonDown);
+                    publishChangedTopics(i);
+                    break;
+                }
+            }
+    	}
         return false;
     }
 

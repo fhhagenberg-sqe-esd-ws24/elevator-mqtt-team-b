@@ -5,16 +5,29 @@ import java.util.Random;
 
 import java.util.Properties;
 import org.eclipse.paho.mqttv5.common.packet.MqttProperties;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Main {
+    private static final Logger log = LoggerFactory.getLogger(Main.class);
+
     public static void main(String[] args) {
-    	
+
         String clientId = "Algorithm";
         Properties properties = new Properties();
         String mqttUrl = properties.getProperty("mqtt.broker.url", "tcp://localhost:1883");
-        
-    	ElevatorMqttRouter router = new ElevatorMqttRouter(mqttUrl, clientId);
-    	router.connect();
+
+        ElevatorAlgorithm algorithm = new ElevatorAlgorithm();
+        ElevatorMqttRouter router;
+        try {
+            router = new ElevatorMqttRouter(mqttUrl, clientId, algorithm);
+            router.connect();
+        } catch (Exception e) {
+            log.error(e.getMessage());
+        }
+
+        while (true);
+
     	
 /*
         ElevatorAlgorithm algorithm = new ElevatorAlgorithm(numElevators, numFloors);
@@ -40,5 +53,7 @@ public class Main {
             System.out.println();
         }
     }*/
+    }
 }
+
 
