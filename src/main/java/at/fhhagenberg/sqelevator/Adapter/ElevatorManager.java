@@ -13,7 +13,7 @@
  *
 ** *********************************************************************/
 
-package at.fhhagenberg.sqelevator;
+package at.fhhagenberg.sqelevator.Adapter;
 
 import java.util.Timer;
 import java.util.TimerTask;
