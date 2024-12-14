@@ -1,4 +1,4 @@
-package at.fhhagenberg.sqelevator.Adapter;
+package at.fhhagenberg.sqelevator.adapter;
 
 import java.rmi.Naming;
 import java.rmi.RemoteException;

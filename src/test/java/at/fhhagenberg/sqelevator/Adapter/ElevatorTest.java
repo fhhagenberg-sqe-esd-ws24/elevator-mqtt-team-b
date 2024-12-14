@@ -13,7 +13,7 @@
  *
 ** *********************************************************************/
 
-package at.fhhagenberg.sqelevator.Adapter;
+package at.fhhagenberg.sqelevator.adapter;
 
 import static org.junit.jupiter.api.Assertions.*;
 

@@ -13,7 +13,7 @@
  *
 ** *********************************************************************/
 
-package at.fhhagenberg.sqelevator.Adapter;
+package at.fhhagenberg.sqelevator.adapter;
 
 import java.rmi.RemoteException;
 import java.util.Arrays;
