@@ -3,11 +3,20 @@ package at.fhhagenberg.sqelevator.algorithm;
 
 import java.util.Random;
 
+import java.util.Properties;
+import org.eclipse.paho.mqttv5.common.packet.MqttProperties;
+
 public class Main {
     public static void main(String[] args) {
-        // Simulate the elevator system
-        int numElevators = 3;
-        int numFloors = 10;
+    	
+        String clientId = "Algorithm";
+        Properties properties = new Properties();
+        String mqttUrl = properties.getProperty("mqtt.broker.url", "tcp://localhost:1883");
+        
+    	ElevatorMqttRouter router = new ElevatorMqttRouter(mqttUrl, clientId);
+    	router.connect();
+    	
+/*
         ElevatorAlgorithm algorithm = new ElevatorAlgorithm(numElevators, numFloors);
 
         // Simulate elevator updates and requests
@@ -30,6 +39,6 @@ public class Main {
             }
             System.out.println();
         }
-    }
+    }*/
 }
 
