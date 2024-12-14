@@ -26,10 +26,10 @@ public class ElevatorState {
     // previous is necessary to determine if algorithm changed the property
     public int previousTargetFloor;
     // previous is necessary to determine if algorithm changed the property
-    public int previousDirection; // 0 = UP, 1 = DOWN, 2 = UNCOMMITTED
     public boolean[] serviceFloors;
     public boolean[] floorButtons;
 
+    public eDirection previousDirection; // 0 = UP, 1 = DOWN, 2 = UNCOMMITTED
     public eDirection direction;
 
     public ElevatorState(int numberOfFloors) {
