@@ -19,6 +19,7 @@ import java.util.List;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import sqelevator.IElevator;
 
 public class ElevatorSystem {
 	private IElevator plc;

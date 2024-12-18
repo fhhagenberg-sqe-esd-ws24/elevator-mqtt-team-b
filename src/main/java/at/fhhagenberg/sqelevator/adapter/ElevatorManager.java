@@ -29,6 +29,7 @@ import org.eclipse.paho.mqttv5.common.MqttMessage;
 import org.eclipse.paho.mqttv5.common.MqttException;
 import org.eclipse.paho.mqttv5.client.persist.MemoryPersistence;
 import org.eclipse.paho.mqttv5.common.packet.MqttProperties;
+import sqelevator.IElevator;
 
 public class ElevatorManager {
     private ElevatorSystem elevatorSystem;

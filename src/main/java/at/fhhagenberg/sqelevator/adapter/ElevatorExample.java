@@ -3,6 +3,7 @@ package at.fhhagenberg.sqelevator.adapter;
 import java.rmi.Naming;
 import java.rmi.RemoteException;
 import java.util.Properties;
+import sqelevator.IElevator;
 
 
 public class ElevatorExample {

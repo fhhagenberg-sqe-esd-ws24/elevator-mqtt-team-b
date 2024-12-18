@@ -17,6 +17,7 @@ package at.fhhagenberg.sqelevator.adapter;
 
 import java.rmi.RemoteException;
 import java.util.Arrays;
+import sqelevator.IElevator;
 
 public class Elevator {
 	private IElevator plc;

@@ -1,4 +1,4 @@
-package at.fhhagenberg.sqelevator.adapter;
+package sqelevator;
 
 /**
  * High-level interface to access and control the elevator system.
