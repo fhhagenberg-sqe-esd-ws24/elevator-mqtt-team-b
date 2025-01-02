@@ -314,7 +314,7 @@ public class ElevatorMqttRouter {
     	}
     	else if (Objects.equals(mqttTopic[1], "rmi"))
     	{
-        	if (mqttTopic.length != 3 || !Objects.equals(mqttTopic[2], "interface"))
+        	if (mqttTopic.length != 3 || !Objects.equals(mqttTopic[2], "connected"))
         	{
         		System.err.println("Unhandled continuous message: " + Arrays.toString(mqttTopic));
         		return true;

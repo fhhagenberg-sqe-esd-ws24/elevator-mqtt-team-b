@@ -64,15 +64,15 @@ public class MainAdapter {
                 Thread.currentThread().interrupt();
                 System.out.println("InterruptedException Main Adapter: " + e.getMessage());
             } catch (MqttException e) {
-                System.out.println("MqttException Main Adapter: ");
+                System.out.println("MqttException Main Adapter: " + e.getMessage());
             } catch (MalformedURLException e) {
-                System.out.println("MalformedURLException Main Adapter: ");
+                System.out.println("MalformedURLException Main Adapter: " + e.getMessage());
             } catch (RemoteException e) {
-                System.out.println("RemoteException Main Adapter: ");
+                System.out.println("RemoteException Main Adapter: " + e.getMessage());
             } catch (IOException e) {
-                System.out.println("IOException Main Adapter: ");
+                System.out.println("IOException Main Adapter: " + e.getMessage());
             } catch (NotBoundException e) {
-                System.out.println("NotBoundException Main Adapter: ");
+                System.out.println("NotBoundException Main Adapter: " + e.getMessage());
             }
 
             try {
