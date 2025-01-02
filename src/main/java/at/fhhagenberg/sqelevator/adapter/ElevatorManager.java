@@ -98,7 +98,6 @@ public class ElevatorManager {
 	                    elevatorSystem.updateElevators();
 	                    publishChanges(false);
 	                } catch (java.rmi.RemoteException e) {
-	                    //e.printStackTrace();
 	                	System.out.println("RMI Exception - Do restart...");
 	                	timer.cancel();
 	                    doRestart = true;
@@ -124,7 +123,7 @@ public class ElevatorManager {
             try {
                 mqttClient.disconnect();
             } catch (MqttException e) {
-                e.printStackTrace();
+                System.out.println("RMI Exception - Do restart...");
             }
         }
     }
@@ -211,7 +210,6 @@ public class ElevatorManager {
         } catch (MqttException e) {
         	System.out.println("Exception in publishToMQTT");
        	 	doRestart = true;
-            //e.printStackTrace();
         }
     }  
     
@@ -227,7 +225,6 @@ public class ElevatorManager {
             @Override
             public void mqttErrorOccurred(MqttException exception) {
             	System.out.println("Exception in mqttErrorOccurred");
-                //exception.printStackTrace();
                 doRestart = true;
             }
 
@@ -298,7 +295,6 @@ public class ElevatorManager {
                     break;
             }
         } catch (NumberFormatException | java.rmi.RemoteException e) {
-            e.printStackTrace();
             System.out.println("Exception in handleIncomingMessage");
             doRestart = true;
         }  

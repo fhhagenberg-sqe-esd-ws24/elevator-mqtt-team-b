@@ -2,6 +2,7 @@ package at.fhhagenberg.sqelevator.algorithm;
 
 import org.eclipse.paho.mqttv5.client.MqttClient;
 import org.eclipse.paho.mqttv5.client.persist.MemoryPersistence;
+import org.eclipse.paho.mqttv5.common.MqttException;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -52,8 +53,11 @@ public class MainAlgorithm {
                 logRestart();
 
                 router.disconnect();
-            } catch (Exception e) {
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
                 logger.log(Level.SEVERE, e.getMessage());
+            } catch (MqttException e) {
+                System.out.println("MqttException Main Algorithm." + e.getMessage());
             }
         }
     }

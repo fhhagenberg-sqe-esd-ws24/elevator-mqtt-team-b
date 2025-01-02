@@ -1,7 +1,9 @@
 package at.fhhagenberg.sqelevator.adapter;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.rmi.Naming;
+import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -10,6 +12,7 @@ import java.util.logging.FileHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.eclipse.paho.mqttv5.common.MqttException;
 import sqelevator.IElevator;
 
 public class MainAdapter {
@@ -57,14 +60,26 @@ public class MainAdapter {
 
                 elevatorManager.stopPolling();
 
-            } catch (Exception e) {
-                e.printStackTrace();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                System.out.println("InterruptedException Main Adapter: " + e.getMessage());
+            } catch (MqttException e) {
+                System.out.println("MqttException Main Adapter: ");
+            } catch (MalformedURLException e) {
+                System.out.println("MalformedURLException Main Adapter: ");
+            } catch (RemoteException e) {
+                System.out.println("RemoteException Main Adapter: ");
+            } catch (IOException e) {
+                System.out.println("IOException Main Adapter: ");
+            } catch (NotBoundException e) {
+                System.out.println("NotBoundException Main Adapter: ");
             }
 
             try {
                 Thread.sleep(1000);
-            } catch (Exception e) {
-                e.printStackTrace();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                System.out.println("InterruptedException Main Adapter: " + e.getMessage());
             }
         }
     }
