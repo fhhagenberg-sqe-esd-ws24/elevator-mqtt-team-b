@@ -1,1 +1,0 @@
-typeSearchIndex = [{"l":"All Classes and Interfaces","u":"allclasses-index.html"},{"p":"at.fhhagenberg.sqelevator","l":"Elevator"},{"p":"at.fhhagenberg.sqelevator","l":"ElevatorExample"},{"p":"at.fhhagenberg.sqelevator","l":"ElevatorManager"},{"p":"at.fhhagenberg.sqelevator","l":"ElevatorSystem"},{"p":"at.fhhagenberg.sqelevator","l":"IElevator"}];updateSearchResults();
