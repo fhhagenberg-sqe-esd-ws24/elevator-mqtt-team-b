@@ -253,9 +253,14 @@ public class ElevatorManager {
         });
 
         // Subscribe to relevant topics
-        mqttClient.subscribe("system/elevator/set/+/committedDirection", 2);
-        mqttClient.subscribe("system/elevator/set/+/serviceFloor/+", 2);
-        mqttClient.subscribe("system/elevator/set/+/target", 2);
+        try {
+            mqttClient.subscribe("system/elevator/set/+/committedDirection", 2);
+            mqttClient.subscribe("system/elevator/set/+/serviceFloor/+", 2);
+            mqttClient.subscribe("system/elevator/set/+/target", 2);
+        } catch (MqttException e) {
+            doRestart = true; // Ensure restart is triggered on subscription failure
+            throw e;
+        }
     }
     
     private void handleIncomingMessage(String topic, MqttMessage message) {
