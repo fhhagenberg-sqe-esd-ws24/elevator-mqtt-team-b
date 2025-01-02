@@ -38,7 +38,7 @@ public class ElevatorManager {
     private String clientId = "Elevator";
     private long timerPeriod;
 
-    public ElevatorManager(IElevator plc, Properties properties) throws java.rmi.RemoteException, MqttException, IOException 
+	public ElevatorManager(IElevator plc, Properties properties) throws java.rmi.RemoteException, MqttException, IOException 
     {
         // Get properties
         String mqttUrl = properties.getProperty("mqtt.url", "tcp://localhost:1883");
@@ -54,30 +54,67 @@ public class ElevatorManager {
         this.timer = new Timer(true); // Timer runs as a daemon thread
     }
 
-    public void startPolling() throws MqttException {
+	public void startPolling() {
 	    MqttConnectionOptions options = new MqttConnectionOptions();
 	    options.setAutomaticReconnect(true);
-	    options.setCleanStart(true);  
-	    
-	    // connect to mqtt broker
-	    mqttClient.connect(options);
-	    startAsyncSubscription();
-	    
-	    // initial publish after connect
-        initialPublish();
-	    	
-		timer.scheduleAtFixedRate(new TimerTask() {
-		    @Override
-		    public void run() {
-		        try {
-		            elevatorSystem.updateElevators();
-		            publishChanges(false);
-		        } catch (java.rmi.RemoteException e) {
-		            e.printStackTrace();
-		        }
-		    }
-        }, 0, timerPeriod); // Schedule task with configurable period
-    }
+	    options.setCleanStart(true);
+
+	    // Retry logic for connecting to the MQTT broker
+	    boolean connected = false;
+	    int retryCount = 0;
+	    int maxRetries = 5; // Maximum number of retries
+	    long retryDelay = 5000; // Delay between retries in milliseconds
+
+	    while (!connected/* && retryCount < maxRetries*/) {
+	        try {
+	            // Attempt to connect to the MQTT broker
+	            mqttClient.connect(options);
+	            connected = true; // Connection successful
+	        } catch (MqttException e) {
+	            retryCount++;
+	            System.err.println("Failed to connect to MQTT broker. Attempt " + retryCount + " of " + maxRetries);
+	            e.printStackTrace();
+	            if (true/*retryCount < maxRetries*/) {
+	                try {
+	                    Thread.sleep(retryDelay); // Wait before retrying
+	                } catch (InterruptedException ie) {
+	                    Thread.currentThread().interrupt();
+	                    System.err.println("Retry interrupted");
+	                    return; // Exit if thread is interrupted
+	                }
+	            } else {
+	                System.err.println("Maximum retry attempts reached. Unable to connect to MQTT broker.");
+	                return; // Exit method if unable to connect
+	            }
+	        }
+	    }
+
+	    // Proceed with the rest of the method after successful connection
+	    try {
+	        startAsyncSubscription();
+
+	        // Initial publish after connect
+	        initialPublish();
+
+	        // Schedule periodic tasks
+	        timer.scheduleAtFixedRate(new TimerTask() {
+	            @Override
+	            public void run() {
+	                try {
+	                    elevatorSystem.updateElevators();
+	                    publishChanges(false);
+	                } catch (java.rmi.RemoteException e) {
+	                    e.printStackTrace();
+	                }
+	            }
+	        }, 0, timerPeriod); // Schedule task with configurable period
+
+	    } catch (Exception e) {
+	        System.err.println("An error occurred after establishing the connection.");
+	        e.printStackTrace();
+	    }
+	}
+
 
     public void stopPolling() { 
         timer.cancel();
@@ -215,7 +252,7 @@ public class ElevatorManager {
     }
     
     private void handleIncomingMessage(String topic, MqttMessage message) {
-    	System.out.println("Incomming message: " + topic + message);
+    	System.out.println("Incomming message: " + topic + "/" + message);
         try {
             String[] parts = topic.split("/");
             if (parts.length < 5) {

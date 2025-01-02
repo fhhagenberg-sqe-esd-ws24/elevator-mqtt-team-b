@@ -14,6 +14,7 @@ import org.eclipse.paho.mqttv5.common.packet.MqttProperties;
 import java.util.Arrays;
 import java.util.Objects;
 
+
 public class ElevatorMqttRouter {
 
     private final MqttClient mqttClient;
@@ -22,8 +23,8 @@ public class ElevatorMqttRouter {
 	private int numFloors = 0;
 	private int floorHeight = 0;
 
-	private boolean[] buttonUp = {false};
-	private boolean[] buttonDown = {false};
+	private boolean[] buttonUp;
+	private boolean[] buttonDown;
     private ElevatorState[] elevators;
     private IElevatorAlgorithm algorithm;
 
@@ -62,6 +63,15 @@ public class ElevatorMqttRouter {
             @Override
             public void connectComplete(boolean reconnect, String serverURI) {
                 System.out.println("Connected to MQTT broker: " + serverURI);
+                isSetupPhase = true;
+                try 
+                {
+                	subscribeToSetupTopics();
+                }
+                catch(MqttException e)
+                {
+                	e.printStackTrace();
+                }
             }
 
             @Override
@@ -71,7 +81,6 @@ public class ElevatorMqttRouter {
         });
 
         mqttClient.connect(options);
-        subscribeToSetupTopics();
     }
     
     private void subscribeToSetupTopics() throws MqttException {
@@ -100,7 +109,7 @@ public class ElevatorMqttRouter {
     }
 
     private void handleIncomingMessage(String topic, MqttMessage message) {
-        System.out.println("Incoming message: " + topic + " => " + new String(message.getPayload()));
+        System.out.println("<= Incoming message: " + topic + " => " + new String(message.getPayload()));
 
     	// Split and check errors
         String[] parts = topic.split("/");
@@ -115,6 +124,24 @@ public class ElevatorMqttRouter {
 	        if (isSetupPhase)
 	        {
 	        	isSetupPhase = parseSetupMessage(parts, new String(message.getPayload()));
+	            if (!isSetupPhase)
+	            {
+	                try {
+	                    subscribeToContinousTopics();
+	                } catch (MqttException e) {
+	                    e.printStackTrace();
+	                }
+
+	                elevators = new ElevatorState[numElevators];
+	                for (int i = 0; i < numElevators; i++) {
+	                    elevators[i] = new ElevatorState(numFloors);
+	                }
+	                
+	                buttonUp = new boolean[numFloors];
+	                buttonDown = new boolean[numFloors];
+	                Arrays.fill(buttonUp, false);
+	                Arrays.fill(buttonDown, false);
+	            }
 	        }
 	        else
 	        {
@@ -134,6 +161,7 @@ public class ElevatorMqttRouter {
                 message.setQos(2); //exactly once delivery
                 message.setRetained(true); // Set retain flag to true
                 mqttClient.publish(topic, message);
+                System.out.println("=> Sent message: " + topic + " => " + new String(message.getPayload()));
             }
         } catch (MqttException e) {
             e.printStackTrace();
@@ -151,7 +179,7 @@ public class ElevatorMqttRouter {
     
     private boolean parseSetupMessage(String [] mqttTopic, String mqttPayload)
     {
-    	if ((mqttTopic.length != 3) || (mqttPayload.isEmpty()))
+    	if ((mqttTopic.length != 2) || (mqttPayload.isEmpty()))
     	{
     		System.err.println("Unhandled setup message: " + Arrays.toString(mqttTopic));
     		return true;
@@ -176,15 +204,6 @@ public class ElevatorMqttRouter {
         // Check if setup done is done
         if ((numElevators != 0) && (numFloors != 0) && (floorHeight != 0))
         {
-            try {
-                subscribeToContinousTopics();
-            } catch (MqttException e) {
-                e.printStackTrace();
-            }
-
-            for (int i = 0; i < numElevators; i++) {
-                elevators[i] = new ElevatorState(numFloors);
-            }
         	return false;
         }
         else
@@ -197,8 +216,15 @@ public class ElevatorMqttRouter {
     {
     	String[] strPayload;
     	
+    	
     	if (Objects.equals(mqttTopic[1], "elevator"))
     	{
+        	if ((mqttTopic.length < 4) || (mqttPayload.isEmpty()))
+        	{
+        		System.err.println("Unhandled continous message: " + Arrays.toString(mqttTopic));
+        		return true;
+        	}
+    		
     		int elevatorNumber = Integer.parseInt(mqttTopic[2]);
     		
     		// Elevator message
@@ -233,6 +259,12 @@ public class ElevatorMqttRouter {
     	}
     	else if (Objects.equals(mqttTopic[1], "floor"))
     	{
+        	if ((mqttTopic.length < 3) || (mqttPayload.isEmpty()))
+        	{
+        		System.err.println("Unhandled continous message: " + Arrays.toString(mqttTopic));
+        		return true;
+        	}
+    		
     		// Floor message
     		switch (mqttTopic[2]) 
     		{

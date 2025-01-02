@@ -112,6 +112,10 @@ public class ElevatorSystem {
     	{
     		plc.setCommittedDirection(elevatorNumber, direction);    		
     	}  	
+    	else
+    	{
+    		System.out.println("ignored - already set (setCommittedDirection)");
+    	}
     }
     
     public void setServicesFloors(int elevatorNumber, int floor, boolean service) throws RemoteException {
@@ -119,12 +123,20 @@ public class ElevatorSystem {
     	{
     		plc.setServicesFloors(elevatorNumber, floor, service);
     	}
+    	else
+    	{
+    		System.out.println("ignored - already set (setServicesFloors)");
+    	}
     }
     
     public void setTarget(int elevatorNumber, int target) throws RemoteException {
     	if(plc.getTarget(elevatorNumber) != target)
     	{
     		plc.setTarget(elevatorNumber, target);
+    	}
+    	else
+    	{
+    		System.out.println("ignored - already set (setTarget)");
     	}
     }
 }

@@ -3,13 +3,15 @@ package at.fhhagenberg.sqelevator.adapter;
 import java.rmi.Naming;
 import java.rmi.RemoteException;
 import java.util.Properties;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.eclipse.paho.mqttv5.client.MqttClient;
 import org.eclipse.paho.mqttv5.client.persist.MemoryPersistence;
 
 import sqelevator.IElevator;
 
-public class Main {
+public class MainAdapter {
 	private static IElevator controller;
     private static Properties properties;
     private static MqttClient mqttClient;
@@ -20,18 +22,23 @@ public class Main {
 	public static void main(String[] args) {
 		// System.setSecurityManager(new SecurityManager());
 		try {
-			IElevator controller = (IElevator) Naming.lookup("rmi://localhost/ElevatorSim");
-			displayElevatorSettings();
-			
-			// Set up properties
+			// Get properties
 	        properties = new Properties();
-	        properties.setProperty("mqtt.url", brokerUrl);
-	        properties.setProperty("timer.period", "250");
+	        
+			String plcUrl = properties.getProperty("plc.url", "rmi://localhost/ElevatorSim");
+			
+			controller = (IElevator) Naming.lookup(plcUrl);
+			displayElevatorSettings();
 
+	        // Set log level for the Paho MQTT client
+	        Logger logger = Logger.getLogger("org.eclipse.paho.mqttv5.client");
+	        logger.setLevel(Level.SEVERE); // Only log SEVERE messages
+			
 	        // Initialize ElevatorManager
 	        elevatorManager = new ElevatorManager(controller, properties);
 	        elevatorManager.startPolling();
 
+	        while(true);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
