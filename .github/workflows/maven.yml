@@ -34,19 +34,14 @@ jobs:
     - name: Create Build Outputs Directory
       run: mkdir -p build-outputs
 
-    - name: Build MainAlgorithm JAR
-      run: |
-        jar -cvfe build-outputs/MainAlgorithm.jar at.fhhagenberg.sqelevator.algorithm.MainAlgorithm -C target/classes .
-
-    - name: Build MainAdapter JAR
-      run: |
-        jar -cvfe build-outputs/MainAdapter.jar at.fhhagenberg.sqelevator.adapter.MainAdapter -C target/classes .
+    - name: Build Fat JARs with Maven
+      run: mvn -B clean package --file pom.xml
 
     - name: Upload Executable JARs
       uses: actions/upload-artifact@v4
       with:
         name: executable-jars
-        path: target/mqtt-elevator-teamb-0.0.1-SNAPSHOT-*.jar
+        path: target/mqtt-elevator-teamb-*.jar
 
   test:
     needs: build
