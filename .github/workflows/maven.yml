@@ -31,10 +31,14 @@ jobs:
     - name: Build with Maven
       run: mvn -B clean package --file pom.xml
 
-    - name: Create Executable JAR
+    - name: Build MainAlgorithm JAR
       run: |
-        mkdir -p build-outputs
-        cp target/*.jar build-outputs/
+        jar -cvfe build-outputs/MainAlgorithm.jar at.fhhagenberg.sqelevator.algorithm.MainAlgorithm -C target/classes at/fhhagenberg/sqelevator/algorithm/MainAlgorithm.class
+      shell: bash
+
+    - name: Build MainAdapter JAR
+      run: |
+        jar -cvfe build-outputs/MainAdapter.jar at.fhhagenberg.sqelevator.adapter.MainAdapter -C target/classes at/fhhagenberg/sqelevator/adapter/MainAdapter.class
       shell: bash
 
     - name: Upload Executable JAR
@@ -44,7 +48,7 @@ jobs:
         path: build-outputs/
 
   test:
-    needs: build # Führt die Tests nach dem Build aus
+    needs: build
     runs-on: ubuntu-latest
 
     steps:
@@ -66,13 +70,6 @@ jobs:
       with:
         name: jacoco-report
         path: target/site/jacoco
-
-    - name: Generate Coverage Data
-      if: success()
-      run: |
-        mkdir -p coverage-data
-        cp target/site/jacoco/jacoco.xml coverage-data/
-        echo "Coverage data exported."
 
     - name: Upload Coverage Data
       if: success()
