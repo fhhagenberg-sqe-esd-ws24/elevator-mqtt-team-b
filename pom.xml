@@ -100,6 +100,45 @@
                 <version>3.11.0</version>
             </plugin>
 
+            <!-- Maven Jar Plugin -->
+	        <plugin>
+	            <groupId>org.apache.maven.plugins</groupId>
+	            <artifactId>maven-jar-plugin</artifactId>
+	            <version>3.3.0</version>
+	            <executions>
+	                <execution>
+	                    <id>algorithm-jar</id>
+	                    <phase>package</phase>
+	                    <goals>
+	                        <goal>jar</goal>
+	                    </goals>
+	                    <configuration>
+	                        <archive>
+	                            <manifest>
+	                                <mainClass>at.fhhagenberg.sqelevator.algorithm.MainAlgorithm</mainClass>
+	                            </manifest>
+	                        </archive>
+	                        <finalName>MainAlgorithm</finalName>
+	                    </configuration>
+	                </execution>
+	                <execution>
+	                    <id>adapter-jar</id>
+	                    <phase>package</phase>
+	                    <goals>
+	                        <goal>jar</goal>
+	                    </goals>
+	                    <configuration>
+	                        <archive>
+	                            <manifest>
+	                                <mainClass>at.fhhagenberg.sqelevator.adapter.MainAdapter</mainClass>
+	                            </manifest>
+	                        </archive>
+	                        <finalName>MainAdapter</finalName>
+	                    </configuration>
+	                </execution>
+	            </executions>
+	        </plugin>
+
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.2.1</version>
