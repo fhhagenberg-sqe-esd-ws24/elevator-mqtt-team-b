@@ -46,8 +46,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: executable-jars
-        path: build-outputs/
-
+        path: target/mqtt-elevator-teamb-0.0.1-SNAPSHOT-*.jar
 
   test:
     needs: build
