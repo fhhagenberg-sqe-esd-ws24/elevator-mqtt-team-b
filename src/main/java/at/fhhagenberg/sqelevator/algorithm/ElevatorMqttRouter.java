@@ -152,7 +152,7 @@ public class ElevatorMqttRouter {
 	        }
 	        else
 	        {
-	        	isSetupPhase = parseContinousMessage(parts, new String(message.getPayload()));
+	        	isSetupPhase = parseContinuousMessage(parts, new String(message.getPayload()));
 	        }
         } 
         catch (NumberFormatException e)
@@ -219,7 +219,7 @@ public class ElevatorMqttRouter {
         }
     }
    
-    private boolean parseContinousMessage(String[]mqttTopic, String mqttPayload)
+    private boolean parseContinuousMessage(String[]mqttTopic, String mqttPayload)
     {
     	String[] strPayload;
     	
