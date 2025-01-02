@@ -11,7 +11,7 @@ public interface IElevatorAlgorithm {
      * @param buttonUp      An array indicating which up buttons on the floors are pressed.
      * @param buttonDown    An array indicating which down buttons on the floors are pressed.
      */
-    void processRequests(ElevatorState elevatorState, boolean[] floorButtons, boolean[] serviceFloors, boolean[] buttonUp, boolean[] buttonDown);
+    void processRequests(ElevatorState elevatorState, ElevatorState[] allElevators, boolean[] floorButtons, boolean[] serviceFloors, boolean[] buttonUp, boolean[] buttonDown);
 
     /**
      * Determines if a floor should be serviced based on current requests and service availability.

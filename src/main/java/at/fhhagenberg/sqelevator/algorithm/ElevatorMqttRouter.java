@@ -11,6 +11,8 @@ import org.eclipse.paho.mqttv5.common.MqttException;
 import org.eclipse.paho.mqttv5.common.MqttMessage;
 import org.eclipse.paho.mqttv5.common.packet.MqttProperties;
 
+import at.fhhagenberg.sqelevator.algorithm.ElevatorState.eDoorStatus;
+
 import java.util.Arrays;
 import java.util.Objects;
 
@@ -102,6 +104,8 @@ public class ElevatorMqttRouter {
         mqttClient.subscribe("system/elevator/+/floorButtons", 2);
         // Subscribe to set service floors that are ignored/skipped
         mqttClient.subscribe("system/elevator/+/serviceFloor", 2);
+        // Subscribe to door status to check if person has left elevator
+        mqttClient.subscribe("system/elevator/+/doorStatus", 2);
         
         //mqttClient.subscribe("system/elevator/set/+/committedDirection", 2);
         //mqttClient.subscribe("system/elevator/set/+/target", 2);
@@ -247,13 +251,16 @@ public class ElevatorMqttRouter {
                         elevators[elevatorNumber].serviceFloors[i] = Boolean.parseBoolean(strPayload[i].trim());
 	                }
 	                break;
-	
+	                
+	            case "doorStatus":
+	            	elevators[elevatorNumber].doorStatus = ElevatorState.eDoorStatus.fromValue(Integer.parseInt(mqttPayload));
+	                break;
+	                
 	            default:
 	                System.err.println("Unhandled topic: " + mqttTopic);
 	                break;
 	        }
-            algorithm.processRequests(elevators[elevatorNumber], elevators[elevatorNumber].floorButtons, elevators[elevatorNumber].serviceFloors, buttonUp, buttonDown);
-
+            algorithm.processRequests(elevators[elevatorNumber], elevators, elevators[elevatorNumber].floorButtons, elevators[elevatorNumber].serviceFloors, buttonUp, buttonDown);
             publishChangedTopics(elevatorNumber);
 
     	}
@@ -287,7 +294,7 @@ public class ElevatorMqttRouter {
 
             for(int i = 0; i < numElevators; i++) {
                 if(elevators[i].direction == ElevatorState.eDirection.IDLE) {
-                    algorithm.processRequests(elevators[i], elevators[i].floorButtons, elevators[i].serviceFloors, buttonUp, buttonDown);
+                    algorithm.processRequests(elevators[i], elevators, elevators[i].floorButtons, elevators[i].serviceFloors, buttonUp, buttonDown);
                     publishChangedTopics(i);
                     break;
                 }

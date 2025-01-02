@@ -21,26 +21,40 @@ public class MainAdapter {
 	
 	public static void main(String[] args) {
 		// System.setSecurityManager(new SecurityManager());
-		try {
-			// Get properties
-	        properties = new Properties();
-	        
-			String plcUrl = properties.getProperty("plc.url", "rmi://localhost/ElevatorSim");
+		while(true)
+		{
+			try {
+				// Get properties
+		        properties = new Properties();
+		        
+				String plcUrl = properties.getProperty("plc.url", "rmi://localhost/ElevatorSim");
+				
+				controller = (IElevator) Naming.lookup(plcUrl);
+				displayElevatorSettings();
+	
+		        // Set log level for the Paho MQTT client
+		        Logger logger = Logger.getLogger("org.eclipse.paho.mqttv5.client");
+		        logger.setLevel(Level.SEVERE); // Only log SEVERE messages
+				
+		        // Initialize ElevatorManager
+		        elevatorManager = new ElevatorManager(controller, properties);
+		        elevatorManager.startPolling();
+	
+		        while(!elevatorManager.doRestart())
+		        {
+		        	Thread.sleep(1000);
+		        }
+		        
+		        elevatorManager.stopPolling();
+		        
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
 			
-			controller = (IElevator) Naming.lookup(plcUrl);
-			displayElevatorSettings();
-
-	        // Set log level for the Paho MQTT client
-	        Logger logger = Logger.getLogger("org.eclipse.paho.mqttv5.client");
-	        logger.setLevel(Level.SEVERE); // Only log SEVERE messages
-			
-	        // Initialize ElevatorManager
-	        elevatorManager = new ElevatorManager(controller, properties);
-	        elevatorManager.startPolling();
-
-	        while(true);
-		} catch (Exception e) {
-			e.printStackTrace();
+			try
+			{
+				Thread.sleep(1000);
+			} catch (Exception e) {}
 		}
 	}
 

@@ -37,6 +37,7 @@ public class ElevatorManager {
     private MqttClient mqttClient;
     private String clientId = "Elevator";
     private long timerPeriod;
+    private boolean doRestart = false;
 
 	public ElevatorManager(IElevator plc, Properties properties) throws java.rmi.RemoteException, MqttException, IOException 
     {
@@ -64,6 +65,8 @@ public class ElevatorManager {
 	    int retryCount = 0;
 	    int maxRetries = 5; // Maximum number of retries
 	    long retryDelay = 5000; // Delay between retries in milliseconds
+	    
+	    doRestart = false;
 
 	    while (!connected/* && retryCount < maxRetries*/) {
 	        try {
@@ -105,6 +108,7 @@ public class ElevatorManager {
 	                    publishChanges(false);
 	                } catch (java.rmi.RemoteException e) {
 	                    e.printStackTrace();
+	                    doRestart = true;
 	                }
 	            }
 	        }, 0, timerPeriod); // Schedule task with configurable period
@@ -112,9 +116,14 @@ public class ElevatorManager {
 	    } catch (Exception e) {
 	        System.err.println("An error occurred after establishing the connection.");
 	        e.printStackTrace();
+	        doRestart = true;
 	    }
 	}
 
+	public boolean doRestart()
+	{
+		return doRestart;
+	}
 
     public void stopPolling() { 
         timer.cancel();

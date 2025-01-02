@@ -20,6 +20,30 @@ public class ElevatorState {
             return value;
         }
     }
+    
+    public enum eDoorStatus {
+        OPEN(1),
+        CLOSED(2);
+
+        private final int value;
+
+        eDoorStatus(int value) {
+            this.value = value;
+        }
+
+        public int getValue() {
+            return value;
+        }
+        
+        public static eDoorStatus fromValue(int value) {
+            for (eDoorStatus status : eDoorStatus.values()) {
+                if (status.value == value) {
+                    return status;
+                }
+            }
+            throw new IllegalArgumentException("Unknown value: " + value);
+        }
+    }
 
     public int currentFloor;
     public int targetFloor;
@@ -31,6 +55,9 @@ public class ElevatorState {
 
     public eDirection previousDirection; // 0 = UP, 1 = DOWN, 2 = UNCOMMITTED
     public eDirection direction;
+    
+    public eDoorStatus doorStatus;
+    public boolean isReadyForNextTarget;
 
     public ElevatorState(int numberOfFloors) {
         serviceFloors = new boolean[numberOfFloors];
@@ -40,6 +67,8 @@ public class ElevatorState {
         this.currentFloor = 0;
         this.targetFloor = 0;
         this.direction = eDirection.IDLE; // Start as uncommitted
+        this.doorStatus = eDoorStatus.CLOSED;
+        this.isReadyForNextTarget = true;
     }
 
     public boolean hasTargetFloorChanged() {

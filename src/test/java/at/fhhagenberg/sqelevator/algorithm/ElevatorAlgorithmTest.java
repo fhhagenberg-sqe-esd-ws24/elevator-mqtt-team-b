@@ -44,7 +44,7 @@ public class ElevatorAlgorithmTest {
         elevatorState.direction = ElevatorState.eDirection.IDLE;
 
         floorButtons[2] = true; // Request from inside to floor 2
-        elevatorAlgorithm.processRequests(elevatorState, floorButtons, serviceFloors, buttonUp, buttonDown);
+        elevatorAlgorithm.processRequests(elevatorState, elevatorState, floorButtons, serviceFloors, buttonUp, buttonDown);
 
         assertEquals(2, elevatorState.targetFloor);
         assertEquals(ElevatorState.eDirection.UP, elevatorState.direction);
