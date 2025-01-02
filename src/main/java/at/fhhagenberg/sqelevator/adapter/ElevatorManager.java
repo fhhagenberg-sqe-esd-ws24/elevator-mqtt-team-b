@@ -58,12 +58,9 @@ public class ElevatorManager {
 	public void startPolling() {
 	    // Retry logic for connecting to the MQTT broker
 	    boolean connected = false;
-	    int retryCount = 0;
-	    int maxRetries = 5; // Maximum number of retries
 	    long retryDelay = 5000; // Delay between retries in milliseconds
 	    
 	    MqttConnectionOptions options = new MqttConnectionOptions();
-	    options.setAutomaticReconnect(true);
 	    options.setCleanStart(true);
 
 	    doRestart = false;
@@ -75,9 +72,6 @@ public class ElevatorManager {
 	            connected = true;
 	    		publishToMQTT("system/rmi/connected", String.valueOf(1));
 	        } catch (MqttException e) {
-	            retryCount++;
-	            System.err.println("Failed to connect to MQTT broker. Attempt " + retryCount + " of " + maxRetries);
-	            e.printStackTrace();
                 try {
                     Thread.sleep(retryDelay); // Wait before retrying
                 } catch (InterruptedException ie) {
@@ -113,8 +107,7 @@ public class ElevatorManager {
 	        }, 0, timerPeriod); // Schedule task with configurable period
 
 	    } catch (Exception e) {
-	        System.err.println("An error occurred after establishing the connection.");
-	        e.printStackTrace();
+	    	System.out.println("Exception in scheduleAtFixedRate");
 	        doRestart = true;
 	    }
 	}
@@ -216,7 +209,9 @@ public class ElevatorManager {
                 mqttClient.publish(topic, message);
             }
         } catch (MqttException e) {
-            e.printStackTrace();
+        	System.out.println("Exception in publishToMQTT");
+       	 	doRestart = true;
+            //e.printStackTrace();
         }
     }  
     
@@ -225,12 +220,15 @@ public class ElevatorManager {
         mqttClient.setCallback(new MqttCallback() {
              @Override
             public void disconnected(MqttDisconnectResponse disconnectResponse) {
-                // Not used for subscriptions
+            	 System.out.println("Exception in disconnected");
+            	 doRestart = true;
             }
 
             @Override
             public void mqttErrorOccurred(MqttException exception) {
-                exception.printStackTrace();
+            	System.out.println("Exception in mqttErrorOccurred");
+                //exception.printStackTrace();
+                doRestart = true;
             }
 
             @Override
@@ -296,6 +294,8 @@ public class ElevatorManager {
             }
         } catch (NumberFormatException | java.rmi.RemoteException e) {
             e.printStackTrace();
+            System.out.println("Exception in handleIncomingMessage");
+            doRestart = true;
         }  
     }  
 }

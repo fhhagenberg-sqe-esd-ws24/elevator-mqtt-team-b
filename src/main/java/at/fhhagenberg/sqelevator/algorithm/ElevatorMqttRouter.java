@@ -11,8 +11,6 @@ import org.eclipse.paho.mqttv5.common.MqttException;
 import org.eclipse.paho.mqttv5.common.MqttMessage;
 import org.eclipse.paho.mqttv5.common.packet.MqttProperties;
 
-import at.fhhagenberg.sqelevator.algorithm.ElevatorState.eDoorStatus;
-
 import java.util.Arrays;
 import java.util.Objects;
 
@@ -50,7 +48,7 @@ public class ElevatorMqttRouter {
 
             @Override
             public void mqttErrorOccurred(MqttException exception) {
-                exception.printStackTrace();
+            	System.out.println("Exception in mqttErrorOccurred");
                 doRestart = true;
             }
 
@@ -74,7 +72,8 @@ public class ElevatorMqttRouter {
                 }
                 catch(MqttException e)
                 {
-                	e.printStackTrace();
+                	System.out.println("Exception in connectComplete");
+                    doRestart = true;
                 }
             }
 
@@ -158,7 +157,6 @@ public class ElevatorMqttRouter {
         } 
         catch (NumberFormatException e)
         {
-            e.printStackTrace();
         }
     }
 
@@ -172,7 +170,8 @@ public class ElevatorMqttRouter {
                 System.out.println("=> Sent message: " + topic + " => " + new String(message.getPayload()));
             }
         } catch (MqttException e) {
-            e.printStackTrace();
+        	System.out.println("Exception in publishToMQTT");
+            doRestart = true;
         }
     }
 
@@ -332,7 +331,6 @@ public class ElevatorMqttRouter {
                 System.out.println("Disconnected from MQTT broker.");
             }
         } catch (MqttException e) {
-            e.printStackTrace();
         }
     }
     
