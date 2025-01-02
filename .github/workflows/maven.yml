@@ -17,7 +17,7 @@ on:
 jobs:
   build:
 
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
 
     steps:
     - uses: actions/checkout@v4
@@ -41,11 +41,13 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: executable-jars
-        path: target/mqtt-elevator-teamb-*.jar
+        path: |
+          target/mqtt-elevator-teamb-adapter-jar-with-dependencies.jar
+          target/mqtt-elevator-teamb-algorithm-jar-with-dependencies.jar
 
   test:
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
 
     steps:
     - uses: actions/checkout@v4
