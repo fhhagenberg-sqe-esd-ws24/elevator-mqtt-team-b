@@ -31,18 +31,17 @@ jobs:
     - name: Build with Maven
       run: mvn -B clean package --file pom.xml
 
-    - name: Prepare Build Outputs
+    - name: Create Executable JAR
       run: |
         mkdir -p build-outputs
-        cp target/classes/at/fhhagenberg/sqelevator/algorithm/MainAlgorithm.class build-outputs/
-        cp target/classes/at/fhhagenberg/sqelevator/adapter/MainAdapter.class build-outputs/
+        cp target/*.jar build-outputs/
+      shell: bash
 
-    - name: Upload Build Outputs
+    - name: Upload Executable JAR
       uses: actions/upload-artifact@v4
       with:
-        name: build-outputs
+        name: executable-jar
         path: build-outputs/
-
 
   test:
     needs: build # Führt die Tests nach dem Build aus
