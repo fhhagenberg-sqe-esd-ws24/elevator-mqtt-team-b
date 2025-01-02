@@ -4,6 +4,7 @@ package at.fhhagenberg.sqelevator.adapter;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+import java.lang.reflect.Field;
 import java.rmi.RemoteException;
 import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
@@ -328,5 +329,41 @@ public class ElevatorManagerIntegrationTest {
         // Verify exception was logged and no retries were made
         verify(mockPLC, times(1)).setCommittedDirection(0, 5);
     }
+
+    @Test
+    public void testStopPollingCleansUpResources() throws Exception {
+        // Spy on the MQTT client
+        MqttClient spyMqttClient = spy(mqttClient);
+
+        // Use reflection to set the spied MQTT client
+        Field mqttClientField = ElevatorManager.class.getDeclaredField("mqttClient");
+        mqttClientField.setAccessible(true);
+        mqttClientField.set(elevatorManager, spyMqttClient);
+
+        // Start polling in a separate thread to prevent blocking
+        Thread pollingThread = new Thread(() -> elevatorManager.startPolling());
+        pollingThread.start();
+
+        // Wait for polling to initialize
+        Thread.sleep(500); // Adjust delay if necessary
+
+        // Simulate a doRestart trigger to stop polling
+        Field doRestartField = ElevatorManager.class.getDeclaredField("doRestart");
+        doRestartField.setAccessible(true);
+        doRestartField.set(elevatorManager, true);
+
+        // Stop polling
+        elevatorManager.stopPolling();
+
+        // Join the polling thread to ensure clean exit
+        pollingThread.join();
+
+        // Verify that disconnect() was called once
+        verify(spyMqttClient, times(1)).disconnect();
+
+        // Assert the client is no longer connected
+        assertTrue(spyMqttClient.isConnected(), "Expected MQTT client to be disconnected");
+    }
+
           
 }

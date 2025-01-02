@@ -1,8 +1,6 @@
 
 package at.fhhagenberg.sqelevator.algorithm;
 
-import java.util.*;
-
 import at.fhhagenberg.sqelevator.algorithm.ElevatorState.eDirection;
 
 public class ElevatorAlgorithm implements IElevatorAlgorithm {
