@@ -29,6 +29,7 @@ public class ElevatorMqttRouter {
 	private boolean[] buttonDown;
     private ElevatorState[] elevators;
     private IElevatorAlgorithm algorithm;
+    private boolean doRestart = false;
 
 
     public ElevatorMqttRouter(String brokerUrl, String clientId, IElevatorAlgorithm algorithm) throws MqttException {
@@ -38,18 +39,19 @@ public class ElevatorMqttRouter {
 
     public void connect() throws MqttException {
         MqttConnectionOptions options = new MqttConnectionOptions();
-        options.setAutomaticReconnect(true);
         options.setCleanStart(true);
 
         mqttClient.setCallback(new MqttCallback() {
             @Override
             public void disconnected(MqttDisconnectResponse disconnectResponse) {
                 System.out.println("Disconnected from MQTT broker.");
+                doRestart = true;
             }
 
             @Override
             public void mqttErrorOccurred(MqttException exception) {
                 exception.printStackTrace();
+                doRestart = true;
             }
 
             @Override
@@ -93,6 +95,8 @@ public class ElevatorMqttRouter {
     }
 
     private void subscribeToContinousTopics() throws MqttException {
+        // Monitor RMI connection
+        mqttClient.subscribe("system/rmi/connected", 2);
     	// Subscribe to current elevator floor 
         mqttClient.subscribe("system/elevator/+/currentFloor", 2);
         // Subscribe to targeted floor (by PLC)
@@ -106,9 +110,7 @@ public class ElevatorMqttRouter {
         mqttClient.subscribe("system/elevator/+/serviceFloor", 2);
         // Subscribe to door status to check if person has left elevator
         mqttClient.subscribe("system/elevator/+/doorStatus", 2);
-        
-        //mqttClient.subscribe("system/elevator/set/+/committedDirection", 2);
-        //mqttClient.subscribe("system/elevator/set/+/target", 2);
+
         System.out.println("Subscribed to MQTT continous topics.");
     }
 
@@ -222,10 +224,16 @@ public class ElevatorMqttRouter {
     {
     	String[] strPayload;
     	
+    	if ((mqttTopic.length < 2) || (mqttPayload.isEmpty()) || !Objects.equals(mqttTopic[0], "system"))
+    	{
+    		System.err.println("Unhandled continous message: " + Arrays.toString(mqttTopic));
+    		return true;
+    	}
+    	
     	
     	if (Objects.equals(mqttTopic[1], "elevator"))
     	{
-        	if ((mqttTopic.length < 4) || (mqttPayload.isEmpty()))
+        	if (mqttTopic.length != 4)
         	{
         		System.err.println("Unhandled continous message: " + Arrays.toString(mqttTopic));
         		return true;
@@ -268,7 +276,7 @@ public class ElevatorMqttRouter {
     	}
     	else if (Objects.equals(mqttTopic[1], "floor"))
     	{
-        	if ((mqttTopic.length < 3) || (mqttPayload.isEmpty()))
+        	if (mqttTopic.length != 3)
         	{
         		System.err.println("Unhandled continous message: " + Arrays.toString(mqttTopic));
         		return true;
@@ -302,6 +310,18 @@ public class ElevatorMqttRouter {
                 }
             }
     	}
+    	else if (Objects.equals(mqttTopic[1], "rmi"))
+    	{
+        	if (mqttTopic.length != 3 && Objects.equals(mqttTopic[2], "interface"))
+        	{
+        		System.err.println("Unhandled continous message: " + Arrays.toString(mqttTopic));
+        		return true;
+        	}
+        	if (Objects.equals(mqttPayload, "0"))
+        	{
+        		doRestart = true;
+        	}
+    	}
         return false;
     }
 
@@ -314,5 +334,10 @@ public class ElevatorMqttRouter {
         } catch (MqttException e) {
             e.printStackTrace();
         }
+    }
+    
+    public boolean doRestart()
+    {
+    	return doRestart;
     }
 }

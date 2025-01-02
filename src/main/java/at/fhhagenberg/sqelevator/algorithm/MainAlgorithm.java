@@ -19,16 +19,24 @@ public class MainAlgorithm {
         Logger logger = Logger.getLogger("org.eclipse.paho.mqttv5.client");
         logger.setLevel(Level.SEVERE); // Only log SEVERE messages
         
-        ElevatorAlgorithm algorithm = new ElevatorAlgorithm();
-        ElevatorMqttRouter router;
-        try {
-            router = new ElevatorMqttRouter(mqttUrl, clientId, algorithm);
-            router.connect();
-        } catch (Exception e) {
-        	logger.log(Level.SEVERE, e.getMessage());
+        while (true)
+        {
+	        ElevatorAlgorithm algorithm = new ElevatorAlgorithm();
+	        ElevatorMqttRouter router;
+	        try {
+	            router = new ElevatorMqttRouter(mqttUrl, clientId, algorithm);
+	            router.connect();
+	            
+	            while(!router.doRestart())
+		        {
+		        	Thread.sleep(1000);
+		        }
+	        
+	            router.disconnect();
+	        } catch (Exception e) {
+	        	logger.log(Level.SEVERE, e.getMessage());
+	        }
         }
-
-        while (true);
     }
 }
 

@@ -69,6 +69,7 @@ public class ElevatorState {
         this.currentFloor = 0;
         this.targetFloor = 0;
         this.direction = eDirection.IDLE; // Start as uncommitted
+        this.previousDirection = eDirection.IDLE;
         this.doorStatus = eDoorStatus.CLOSED;
         this.isReadyForNextTarget = true;
     }

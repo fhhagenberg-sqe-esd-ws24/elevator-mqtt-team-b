@@ -48,7 +48,6 @@ public class MainAdapter {
 		        elevatorManager.stopPolling();
 		        
 			} catch (Exception e) {
-				e.printStackTrace();
 			}
 			
 			try

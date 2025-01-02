@@ -35,7 +35,7 @@ public class ElevatorManager {
     private ElevatorSystem elevatorSystem;
     private Timer timer;
     private MqttClient mqttClient;
-    private String clientId = "Elevator";
+    private String clientId = "ElevatorManager";
     private long timerPeriod;
     private boolean doRestart = false;
 
@@ -56,39 +56,36 @@ public class ElevatorManager {
     }
 
 	public void startPolling() {
-	    MqttConnectionOptions options = new MqttConnectionOptions();
-	    options.setAutomaticReconnect(true);
-	    options.setCleanStart(true);
-
 	    // Retry logic for connecting to the MQTT broker
 	    boolean connected = false;
 	    int retryCount = 0;
 	    int maxRetries = 5; // Maximum number of retries
 	    long retryDelay = 5000; // Delay between retries in milliseconds
 	    
+	    MqttConnectionOptions options = new MqttConnectionOptions();
+	    options.setAutomaticReconnect(true);
+	    options.setCleanStart(true);
+
 	    doRestart = false;
 
-	    while (!connected/* && retryCount < maxRetries*/) {
+	    while (!connected) {
 	        try {
 	            // Attempt to connect to the MQTT broker
 	            mqttClient.connect(options);
-	            connected = true; // Connection successful
+	            connected = true;
+	    		publishToMQTT("system/rmi/connected", String.valueOf(1));
 	        } catch (MqttException e) {
 	            retryCount++;
 	            System.err.println("Failed to connect to MQTT broker. Attempt " + retryCount + " of " + maxRetries);
 	            e.printStackTrace();
-	            if (true/*retryCount < maxRetries*/) {
-	                try {
-	                    Thread.sleep(retryDelay); // Wait before retrying
-	                } catch (InterruptedException ie) {
-	                    Thread.currentThread().interrupt();
-	                    System.err.println("Retry interrupted");
-	                    return; // Exit if thread is interrupted
-	                }
-	            } else {
-	                System.err.println("Maximum retry attempts reached. Unable to connect to MQTT broker.");
-	                return; // Exit method if unable to connect
-	            }
+                try {
+                    Thread.sleep(retryDelay); // Wait before retrying
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    System.err.println("Retry interrupted");
+                    doRestart = true;
+                    return;
+                }
 	        }
 	    }
 
@@ -107,7 +104,9 @@ public class ElevatorManager {
 	                    elevatorSystem.updateElevators();
 	                    publishChanges(false);
 	                } catch (java.rmi.RemoteException e) {
-	                    e.printStackTrace();
+	                    //e.printStackTrace();
+	                	System.out.println("RMI Exception - Do restart...");
+	                	timer.cancel();
 	                    doRestart = true;
 	                }
 	            }
@@ -126,7 +125,8 @@ public class ElevatorManager {
 	}
 
     public void stopPolling() { 
-        timer.cancel();
+    	timer.cancel();
+    	publishToMQTT("system/rmi/connected", String.valueOf(0));
         if (mqttClient.isConnected()) {
             try {
                 mqttClient.disconnect();
