@@ -22,7 +22,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class ElevatorAlgorithmTest {
 
     private ElevatorAlgorithm elevatorAlgorithm;
-    private ElevatorState elevatorState;
+    private ElevatorState elevatorState[];
     private boolean[] floorButtons;
     private boolean[] serviceFloors;
     private boolean[] buttonUp;
@@ -33,70 +33,73 @@ public class ElevatorAlgorithmTest {
         elevatorAlgorithm = new ElevatorAlgorithm();
         floorButtons = new boolean[5]; // 5 floors
         serviceFloors = new boolean[]{true, true, true, true, true};
-        elevatorState = new ElevatorState(serviceFloors.length);
+        elevatorState = new ElevatorState[1];
+        elevatorState[0] = new ElevatorState(serviceFloors.length);
         buttonUp = new boolean[5];
         buttonDown = new boolean[5];
     }
 
     @Test
     public void testInitialIdleState() {
-        elevatorState.currentFloor = 0;
-        elevatorState.direction = ElevatorState.eDirection.IDLE;
+        elevatorState[0].currentFloor = 0;
+        elevatorState[0].direction = ElevatorState.eDirection.IDLE;
 
         floorButtons[2] = true; // Request from inside to floor 2
-        elevatorAlgorithm.processRequests(elevatorState, elevatorState, floorButtons, serviceFloors, buttonUp, buttonDown);
+        elevatorAlgorithm.processRequests(elevatorState[0], elevatorState, floorButtons, serviceFloors, buttonUp, buttonDown);
 
-        assertEquals(2, elevatorState.targetFloor);
-        assertEquals(ElevatorState.eDirection.UP, elevatorState.direction);
+        assertEquals(2, elevatorState[0].targetFloor);
+        assertEquals(ElevatorState.eDirection.UP, elevatorState[0].direction);
     }
 
     @Test
     public void testMoveUpAndSwitchDirection() {
-        elevatorState.currentFloor = 3;
-        elevatorState.direction = ElevatorState.eDirection.UP;
+        elevatorState[0].currentFloor = 3;
+        elevatorState[0].direction = ElevatorState.eDirection.UP;
 
         buttonUp[4] = true; // Request to go up to floor 4
-        elevatorAlgorithm.processRequests(elevatorState, floorButtons, serviceFloors, buttonUp, buttonDown);
+        elevatorAlgorithm.processRequests(elevatorState[0], elevatorState, floorButtons, serviceFloors, buttonUp, buttonDown);
 
-        assertEquals(4, elevatorState.targetFloor);
+        assertEquals(4, elevatorState[0].targetFloor);
 
         // Simulate reaching the top and switching direction
         buttonDown[2] = true; // Request to go down to floor 2
-        elevatorState.currentFloor = 4;
-        elevatorAlgorithm.processRequests(elevatorState, floorButtons, serviceFloors, buttonUp, buttonDown);
-
-        assertEquals(2, elevatorState.targetFloor);
-        assertEquals(ElevatorState.eDirection.DOWN, elevatorState.direction);
+        elevatorState[0].currentFloor = 4;
+        elevatorState[0].doorStatus = ElevatorState.eDoorStatus.OPEN;
+        elevatorAlgorithm.processRequests(elevatorState[0], elevatorState, floorButtons, serviceFloors, buttonUp, buttonDown);
+        
+        assertEquals(2, elevatorState[0].targetFloor);
+        assertEquals(ElevatorState.eDirection.DOWN, elevatorState[0].direction);
     }
 
     @Test
     public void testMoveDownAndSwitchDirection() {
-        elevatorState.currentFloor = 3;
-        elevatorState.direction = ElevatorState.eDirection.DOWN;
+        elevatorState[0].currentFloor = 3;
+        elevatorState[0].direction = ElevatorState.eDirection.DOWN;
 
         buttonDown[1] = true; // Request to go down to floor 1
-        elevatorAlgorithm.processRequests(elevatorState, floorButtons, serviceFloors, buttonUp, buttonDown);
+        elevatorAlgorithm.processRequests(elevatorState[0], elevatorState, floorButtons, serviceFloors, buttonUp, buttonDown);
 
-        assertEquals(1, elevatorState.targetFloor);
+        assertEquals(1, elevatorState[0].targetFloor);
 
         // Simulate reaching the bottom and switching direction
         buttonUp[4] = true; // Request to go up to floor 4
-        elevatorState.currentFloor = 1;
-        elevatorAlgorithm.processRequests(elevatorState, floorButtons, serviceFloors, buttonUp, buttonDown);
+        elevatorState[0].currentFloor = 1;
+        elevatorState[0].doorStatus = ElevatorState.eDoorStatus.OPEN;
+        elevatorAlgorithm.processRequests(elevatorState[0], elevatorState, floorButtons, serviceFloors, buttonUp, buttonDown);
 
-        assertEquals(4, elevatorState.targetFloor);
-        assertEquals(ElevatorState.eDirection.UP, elevatorState.direction);
+        assertEquals(4, elevatorState[0].targetFloor);
+        assertEquals(ElevatorState.eDirection.UP, elevatorState[0].direction);
     }
 
     @Test
     public void testNoRequestsRemainIdle() {
-        elevatorState.currentFloor = 2;
-        elevatorState.direction = ElevatorState.eDirection.IDLE;
+        elevatorState[0].currentFloor = 2;
+        elevatorState[0].direction = ElevatorState.eDirection.IDLE;
 
-        elevatorAlgorithm.processRequests(elevatorState, floorButtons, serviceFloors, buttonUp, buttonDown);
+        elevatorAlgorithm.processRequests(elevatorState[0], elevatorState, floorButtons, serviceFloors, buttonUp, buttonDown);
 
-        assertEquals(2, elevatorState.currentFloor);
-        assertEquals(ElevatorState.eDirection.IDLE, elevatorState.direction);
+        assertEquals(2, elevatorState[0].currentFloor);
+        assertEquals(ElevatorState.eDirection.IDLE, elevatorState[0].direction);
     }
 
     @Test
@@ -114,30 +117,30 @@ public class ElevatorAlgorithmTest {
 
     @Test
     public void testIgnoreUnserviceableFloors() {
-        elevatorState.currentFloor = 0;
-        elevatorState.direction = ElevatorState.eDirection.UP;
+        elevatorState[0].currentFloor = 0;
+        elevatorState[0].direction = ElevatorState.eDirection.UP;
 
         serviceFloors[2] = false; // Floor 2 is not serviceable
         floorButtons[2] = true; // Request for floor 2
 
-        elevatorAlgorithm.processRequests(elevatorState, floorButtons, serviceFloors, buttonUp, buttonDown);
+        elevatorAlgorithm.processRequests(elevatorState[0], elevatorState, floorButtons, serviceFloors, buttonUp, buttonDown);
 
         // No valid target as floor 2 is unserviceable
-        assertEquals(ElevatorState.eDirection.IDLE, elevatorState.direction);
+        assertEquals(ElevatorState.eDirection.IDLE, elevatorState[0].direction);
     }
 
     @Test
     public void testMultipleRequestsPrioritizeDirection() {
-        elevatorState.currentFloor = 1;
-        elevatorState.direction = ElevatorState.eDirection.UP;
+        elevatorState[0].currentFloor = 1;
+        elevatorState[0].direction = ElevatorState.eDirection.UP;
 
         buttonUp[3] = true; // Request to go up to floor 3
         buttonDown[0] = true; // Request to go down to floor 0
 
-        elevatorAlgorithm.processRequests(elevatorState, floorButtons, serviceFloors, buttonUp, buttonDown);
+        elevatorAlgorithm.processRequests(elevatorState[0], elevatorState, floorButtons, serviceFloors, buttonUp, buttonDown);
 
         // Prioritize UP
-        assertEquals(3, elevatorState.targetFloor);
-        assertEquals(ElevatorState.eDirection.UP, elevatorState.direction);
+        assertEquals(3, elevatorState[0].targetFloor);
+        assertEquals(ElevatorState.eDirection.UP, elevatorState[0].direction);
     }
 }
