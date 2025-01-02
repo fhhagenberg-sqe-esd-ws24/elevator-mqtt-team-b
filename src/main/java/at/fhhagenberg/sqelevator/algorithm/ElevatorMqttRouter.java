@@ -145,6 +145,8 @@ public class ElevatorMqttRouter {
 	                buttonDown = new boolean[numFloors];
 	                Arrays.fill(buttonUp, false);
 	                Arrays.fill(buttonDown, false);
+	                
+	                System.out.println("Setup completed");
 	            }
 	        }
 	        else
@@ -239,14 +241,14 @@ public class ElevatorMqttRouter {
 	                break;
 	
 	            case "floorButtons":
-	            	strPayload = mqttPayload.split(",");
-	                for (int i = 0; i < strPayload.length; i++) {
-                        elevators[elevatorNumber].floorButtons[i] = Boolean.parseBoolean(strPayload[i].trim());
-	                }
+					strPayload = mqttPayload.replace("[", "").replace("]", "").split(",");
+	            	for (int i = 0; i < strPayload.length; i++) {
+	            		elevators[elevatorNumber].floorButtons[i] = Boolean.parseBoolean(strPayload[i].trim());
+	            	}
 	                break;
 	
 	            case "serviceFloor":
-	            	strPayload = mqttPayload.split(",");
+	            	strPayload = mqttPayload.replace("[", "").replace("]", "").split(",");
 	                for (int i = 0; i < strPayload.length; i++) {
                         elevators[elevatorNumber].serviceFloors[i] = Boolean.parseBoolean(strPayload[i].trim());
 	                }
@@ -276,16 +278,16 @@ public class ElevatorMqttRouter {
     		switch (mqttTopic[2]) 
     		{
 	            case "buttonUp":
-	            	strPayload = mqttPayload.split(",");
-	                for (int i = 0; i < strPayload.length; i++) {
-	                    buttonUp[i] = Boolean.parseBoolean(strPayload[i].trim());
-	                }
+	            	strPayload = mqttPayload.replace("[", "").replace("]", "").split(",");
+	            	for (int i = 0; i < strPayload.length; i++) {
+	            	    buttonUp[i] = Boolean.parseBoolean(strPayload[i].trim());
+	            	}
 	                break;
 	            case "buttonDown":
-	            	strPayload = mqttPayload.split(",");
-	                for (int i = 0; i < strPayload.length; i++) {
-	                    buttonDown[i] = Boolean.parseBoolean(strPayload[i].trim());
-	                }
+					strPayload = mqttPayload.replace("[", "").replace("]", "").split(",");
+	            	for (int i = 0; i < strPayload.length; i++) {
+	            	    buttonDown[i] = Boolean.parseBoolean(strPayload[i].trim());
+	            	}
 	                break;
 	            default:
 	                System.err.println("Unhandled topic: " + mqttTopic);

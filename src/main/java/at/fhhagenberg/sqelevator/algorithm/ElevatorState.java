@@ -23,7 +23,9 @@ public class ElevatorState {
     
     public enum eDoorStatus {
         OPEN(1),
-        CLOSED(2);
+        CLOSED(2),
+    	OPENING(3),
+    	CLOSING(4);
 
         private final int value;
 
