@@ -178,7 +178,7 @@ class ElevatorMqttRouterTest {
         router.handleIncomingMessage("system/numFloors", new MqttMessage("5".getBytes()));
         router.handleIncomingMessage("system/floorHeight", new MqttMessage("3".getBytes()));
 
-        router.handleIncomingMessage("system/rmi/interface", new MqttMessage("0".getBytes()));
+        router.handleIncomingMessage("system/rmi/connected", new MqttMessage("0".getBytes()));
 
         // Act
         boolean shouldRestart = router.doRestart();
