@@ -31,20 +31,21 @@ jobs:
     - name: Build with Maven
       run: mvn -B clean package --file pom.xml
 
+    - name: Create Build Outputs Directory
+      run: mkdir -p build-outputs
+
     - name: Build MainAlgorithm JAR
       run: |
         jar -cvfe build-outputs/MainAlgorithm.jar at.fhhagenberg.sqelevator.algorithm.MainAlgorithm -C target/classes at/fhhagenberg/sqelevator/algorithm/MainAlgorithm.class
-      shell: bash
 
     - name: Build MainAdapter JAR
       run: |
         jar -cvfe build-outputs/MainAdapter.jar at.fhhagenberg.sqelevator.adapter.MainAdapter -C target/classes at/fhhagenberg/sqelevator/adapter/MainAdapter.class
-      shell: bash
 
-    - name: Upload Executable JAR
+    - name: Upload Executable JARs
       uses: actions/upload-artifact@v4
       with:
-        name: executable-jar
+        name: executable-jars
         path: build-outputs/
 
   test:
@@ -70,10 +71,3 @@ jobs:
       with:
         name: jacoco-report
         path: target/site/jacoco
-
-    - name: Upload Coverage Data
-      if: success()
-      uses: actions/upload-artifact@v4
-      with:
-        name: code-coverage-data
-        path: coverage-data/
