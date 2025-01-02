@@ -2,32 +2,42 @@ package at.fhhagenberg.sqelevator.adapter;
 
 import java.rmi.Naming;
 import java.rmi.RemoteException;
+import java.util.Properties;
+
+import org.eclipse.paho.mqttv5.client.MqttClient;
+import org.eclipse.paho.mqttv5.client.persist.MemoryPersistence;
 
 import sqelevator.IElevator;
 
-public class ElevatorExample {
-
-	private IElevator controller;
-
-	public ElevatorExample(IElevator controller) {
-		this.controller = controller;
-	}
-
+public class Main {
+	private static IElevator controller;
+    private static Properties properties;
+    private static MqttClient mqttClient;
+    private static String brokerUrl;
+    private static ElevatorManager elevatorManager;
+    
+	
 	public static void main(String[] args) {
 		// System.setSecurityManager(new SecurityManager());
 		try {
 			IElevator controller = (IElevator) Naming.lookup("rmi://localhost/ElevatorSim");
-			ElevatorExample client = new ElevatorExample(controller);
+			displayElevatorSettings();
+			
+			// Set up properties
+	        properties = new Properties();
+	        properties.setProperty("mqtt.url", brokerUrl);
+	        properties.setProperty("timer.period", "250");
 
-			client.displayElevatorSettings();
-			client.runExample();
+	        // Initialize ElevatorManager
+	        elevatorManager = new ElevatorManager(controller, properties);
+	        elevatorManager.startPolling();
 
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
 
-	private void displayElevatorSettings() throws RemoteException {
+	private static void displayElevatorSettings() throws RemoteException {
 		System.out.println("ELEVATOR SETTINGS");
 
 		System.out.println("Current clock tick: " + controller.getClockTick());
@@ -65,60 +75,4 @@ public class ElevatorExample {
 			System.out.println();
 		}
 	}
-
-	private void runExample() throws RemoteException {
-
-		final int elevator = 0;
-		final int numberOfFloors = controller.getFloorNum();
-		final int sleepTime = 60;
-
-		// First: Starting from ground floor, go up to the top floor, stopping in each
-		// floor
-
-		// Set the committed direction displayed on the elevator to up
-		controller.setCommittedDirection(elevator, IElevator.ELEVATOR_DIRECTION_UP);
-
-		for (int nextFloor = 1; nextFloor < numberOfFloors; nextFloor++) {
-
-			// Set the target floor to the next floor above
-			controller.setTarget(elevator, nextFloor);
-
-			// Wait until closest floor is the target floor and speed is back to zero
-			while (controller.getElevatorFloor(elevator) < nextFloor || controller.getElevatorSpeed(elevator) > 0) {
-				try {
-					Thread.sleep(sleepTime);
-				} catch (InterruptedException e) {
-				}
-			}
-
-			// Wait until doors are open before setting the next direction
-			while (controller.getElevatorDoorStatus(elevator) != IElevator.ELEVATOR_DOORS_OPEN) {
-				try {
-					Thread.sleep(sleepTime);
-				} catch (InterruptedException e) {
-				}
-			}
-		}
-
-		// Second, go back from the top floor to the ground floor in one move
-
-		// Set the committed direction displayed on the elevator to down
-		controller.setCommittedDirection(elevator, IElevator.ELEVATOR_DIRECTION_DOWN);
-
-		// Set the target floor to the ground floor (floor number 0)
-		controller.setTarget(elevator, 0);
-
-		// Wait until ground floor has been reached
-		while (controller.getElevatorFloor(elevator) > 0 || controller.getElevatorSpeed(elevator) > 0) {
-			try {
-				Thread.sleep(sleepTime);
-			} catch (InterruptedException e) {
-			}
-		}
-
-		// Set the committed direction to uncommitted when back at the ground floor
-		controller.setCommittedDirection(elevator, IElevator.ELEVATOR_DIRECTION_UNCOMMITTED);
-
-	}
-
 }
