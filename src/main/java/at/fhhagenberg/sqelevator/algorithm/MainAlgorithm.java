@@ -1,5 +1,8 @@
 package at.fhhagenberg.sqelevator.algorithm;
 
+import org.eclipse.paho.mqttv5.client.MqttClient;
+import org.eclipse.paho.mqttv5.client.persist.MemoryPersistence;
+
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -37,7 +40,8 @@ public class MainAlgorithm {
             ElevatorAlgorithm algorithm = new ElevatorAlgorithm();
             ElevatorMqttRouter router;
             try {
-                router = new ElevatorMqttRouter(mqttUrl, clientId, algorithm);
+                MqttClient mqttClient = new MqttClient(mqttUrl, clientId,  new MemoryPersistence());
+                router = new ElevatorMqttRouter(mqttClient, algorithm);
                 router.connect();
 
                 while (!router.doRestart()) {

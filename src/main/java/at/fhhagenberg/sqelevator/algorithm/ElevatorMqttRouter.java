@@ -30,8 +30,8 @@ public class ElevatorMqttRouter {
     private boolean doRestart = false;
 
 
-    public ElevatorMqttRouter(String brokerUrl, String clientId, IElevatorAlgorithm algorithm) throws MqttException {
-        this.mqttClient = new MqttClient(brokerUrl, clientId,  new MemoryPersistence());
+    public ElevatorMqttRouter(MqttClient mqttClient, IElevatorAlgorithm algorithm) throws MqttException {
+        this.mqttClient = mqttClient;
         this.algorithm = algorithm;
     }
 
@@ -113,7 +113,7 @@ public class ElevatorMqttRouter {
         System.out.println("Subscribed to MQTT continous topics.");
     }
 
-    private void handleIncomingMessage(String topic, MqttMessage message) {
+    public void handleIncomingMessage(String topic, MqttMessage message) {
         System.out.println("<= Incoming message: " + topic + " => " + new String(message.getPayload()));
 
     	// Split and check errors
@@ -160,7 +160,7 @@ public class ElevatorMqttRouter {
         }
     }
 
-    private void publishToMQTT(String topic, String messageContent) {
+    public void publishToMQTT(String topic, String messageContent) {
         try {
             if (mqttClient.isConnected()) {
                 MqttMessage message = new MqttMessage(messageContent.getBytes());
