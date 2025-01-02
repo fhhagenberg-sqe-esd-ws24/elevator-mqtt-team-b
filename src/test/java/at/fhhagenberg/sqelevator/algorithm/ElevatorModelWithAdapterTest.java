@@ -25,6 +25,7 @@ class ElevatorModelWithAdapterTest {
         tester.addCoverageMetric(new TransitionCoverage());
         tester.addCoverageMetric(new TransitionPairCoverage());
 
+
         tester.generate(450);
 
         tester.printCoverage();
