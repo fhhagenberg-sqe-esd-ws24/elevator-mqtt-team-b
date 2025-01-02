@@ -60,7 +60,46 @@ class ElevatorMqttRouterTest {
     }
 
     @Test
+    void testHandleIncomingMessage_SetupPhaseInvalid() throws MqttException {
+        // Setup
+        String topic = "system/numElevator/invalidTooLong";
+        MqttMessage message = new MqttMessage("3".getBytes());
+        router.handleIncomingMessage("system/numFloors", new MqttMessage("5".getBytes()));
+        router.handleIncomingMessage("system/floorHeight", new MqttMessage("3".getBytes()));
+        assertTrue(router.isSetupPhase());
+
+        // Act
+        router.connect();
+        router.handleIncomingMessage(topic, message);
+
+        // Assert
+        // correct massage would chang it to false
+        assertTrue(router.isSetupPhase());
+    }
+
+    @Test
     void testHandleIncomingMessage_ContinuousPhase() throws MqttException {
+
+        doAnswer(invocation -> {
+            // Extract the arguments passed to processRequests
+            ElevatorState elevator = invocation.getArgument(0);
+            // set direction so hasChanged method returns true
+            if(elevator.direction == ElevatorState.eDirection.DOWN) {
+                elevator.direction = ElevatorState.eDirection.UP;
+            } else if (elevator.direction == ElevatorState.eDirection.UP) {
+                elevator.direction = ElevatorState.eDirection.DOWN;
+            }
+            else {
+                elevator.direction = ElevatorState.eDirection.UP;
+            }
+
+            return null; // Void method
+        }).when(mockAlgorithm).processRequests(any(), any(), any(), any(), any(), any());
+
+        doAnswer(invocation -> {
+            return true;
+        }).when(mockMqttClient).isConnected();
+
         // Setup the router as if setup is complete
         String topic = "system/elevator/0/currentFloor";
         MqttMessage message = new MqttMessage("2".getBytes());
@@ -69,10 +108,18 @@ class ElevatorMqttRouterTest {
         router.handleIncomingMessage("system/numElevator", new MqttMessage("2".getBytes()));
         router.handleIncomingMessage("system/numFloors", new MqttMessage("5".getBytes()));
         router.handleIncomingMessage("system/floorHeight", new MqttMessage("3".getBytes()));
-        router.handleIncomingMessage(topic, message);
+
+        //Act
+        router.handleIncomingMessage("system/floor/buttonUp", new MqttMessage(topic.getBytes()));
+        router.handleIncomingMessage("system/floor/buttonDown", new MqttMessage(topic.getBytes()));
+        router.handleIncomingMessage("system/elevator/0/doorStatus", new MqttMessage("1".getBytes()));
+        router.handleIncomingMessage("system/elevator/0/currentFloor", message);
+        topic = "[[true, true, true, true, true]]"; // because numFloors = 5
+        router.handleIncomingMessage("system/elevator/0/floorButtons",  new MqttMessage(topic.getBytes()));
+        router.handleIncomingMessage("system/elevator/0/serviceFloor", new MqttMessage(topic.getBytes()));
 
         // Assert
-        verify(mockAlgorithm).processRequests(any(), any(), any(), any(), any(), any());
+        verify(mockMqttClient, times(6)).publish(anyString(), any(MqttMessage.class));
     }
 
     @Test
@@ -130,6 +177,7 @@ class ElevatorMqttRouterTest {
         router.handleIncomingMessage("system/numElevator", new MqttMessage("2".getBytes()));
         router.handleIncomingMessage("system/numFloors", new MqttMessage("5".getBytes()));
         router.handleIncomingMessage("system/floorHeight", new MqttMessage("3".getBytes()));
+
         router.handleIncomingMessage("system/rmi/interface", new MqttMessage("0".getBytes()));
 
         // Act
@@ -137,6 +185,22 @@ class ElevatorMqttRouterTest {
 
         // Assert
         assertTrue(shouldRestart);
+    }
+
+    @Test
+    void testDoRestart_InvalidRmiMessage() throws MqttException {
+        // Simulate an error causing a restart
+        router.connect();
+        router.handleIncomingMessage("system/numElevator", new MqttMessage("2".getBytes()));
+        router.handleIncomingMessage("system/numFloors", new MqttMessage("5".getBytes()));
+        router.handleIncomingMessage("system/floorHeight", new MqttMessage("3".getBytes()));
+        assertFalse(router.isSetupPhase());
+
+        // Act
+        router.handleIncomingMessage("system/rmi/invalid", new MqttMessage("0".getBytes()));
+
+        // Assert
+        assertTrue(router.isSetupPhase());
     }
 
     @Test

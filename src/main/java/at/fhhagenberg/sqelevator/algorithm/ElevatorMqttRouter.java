@@ -29,6 +29,9 @@ public class ElevatorMqttRouter {
     private IElevatorAlgorithm algorithm;
     private boolean doRestart = false;
 
+    public boolean isSetupPhase() {
+        return isSetupPhase;
+    }
 
     public ElevatorMqttRouter(MqttClient mqttClient, IElevatorAlgorithm algorithm) throws MqttException {
         this.mqttClient = mqttClient;
@@ -93,7 +96,7 @@ public class ElevatorMqttRouter {
         System.out.println("Subscribed to MQTT setup topics.");
     }
 
-    private void subscribeToContinousTopics() throws MqttException {
+    private void subscribeTocontinuousTopics() throws MqttException {
         // Monitor RMI connection
         mqttClient.subscribe("system/rmi/connected", 2);
     	// Subscribe to current elevator floor 
@@ -110,7 +113,7 @@ public class ElevatorMqttRouter {
         // Subscribe to door status to check if person has left elevator
         mqttClient.subscribe("system/elevator/+/doorStatus", 2);
 
-        System.out.println("Subscribed to MQTT continous topics.");
+        System.out.println("Subscribed to MQTT continuous topics.");
     }
 
     public void handleIncomingMessage(String topic, MqttMessage message) {
@@ -132,9 +135,9 @@ public class ElevatorMqttRouter {
 	            if (!isSetupPhase)
 	            {
 	                try {
-	                    subscribeToContinousTopics();
+	                    subscribeTocontinuousTopics();
 	                } catch (MqttException e) {
-	                    e.printStackTrace();
+                        System.out.println("subscribeTocontinuousTopics failed");
 	                }
 
 	                elevators = new ElevatorState[numElevators];
@@ -225,16 +228,16 @@ public class ElevatorMqttRouter {
     	
     	if ((mqttTopic.length < 2) || (mqttPayload.isEmpty()) || !Objects.equals(mqttTopic[0], "system"))
     	{
-    		System.err.println("Unhandled continous message: " + Arrays.toString(mqttTopic));
+    		System.err.println("Unhandled continuous message: " + Arrays.toString(mqttTopic));
     		return true;
     	}
-    	
-    	
+
+
     	if (Objects.equals(mqttTopic[1], "elevator"))
     	{
         	if (mqttTopic.length != 4)
         	{
-        		System.err.println("Unhandled continous message: " + Arrays.toString(mqttTopic));
+        		System.err.println("Unhandled continuous message: " + Arrays.toString(mqttTopic));
         		return true;
         	}
     		
@@ -277,7 +280,7 @@ public class ElevatorMqttRouter {
     	{
         	if (mqttTopic.length != 3)
         	{
-        		System.err.println("Unhandled continous message: " + Arrays.toString(mqttTopic));
+        		System.err.println("Unhandled continuous message: " + Arrays.toString(mqttTopic));
         		return true;
         	}
     		
@@ -311,9 +314,9 @@ public class ElevatorMqttRouter {
     	}
     	else if (Objects.equals(mqttTopic[1], "rmi"))
     	{
-        	if (mqttTopic.length != 3 && Objects.equals(mqttTopic[2], "interface"))
+        	if (mqttTopic.length != 3 || !Objects.equals(mqttTopic[2], "interface"))
         	{
-        		System.err.println("Unhandled continous message: " + Arrays.toString(mqttTopic));
+        		System.err.println("Unhandled continuous message: " + Arrays.toString(mqttTopic));
         		return true;
         	}
         	if (Objects.equals(mqttPayload, "0"))
