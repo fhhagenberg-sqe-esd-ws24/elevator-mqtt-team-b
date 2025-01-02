@@ -36,17 +36,18 @@ jobs:
 
     - name: Build MainAlgorithm JAR
       run: |
-        jar -cvfe build-outputs/MainAlgorithm.jar at.fhhagenberg.sqelevator.algorithm.MainAlgorithm -C target/classes at/fhhagenberg/sqelevator/algorithm/MainAlgorithm.class
+        jar -cvfe build-outputs/MainAlgorithm.jar at.fhhagenberg.sqelevator.algorithm.MainAlgorithm -C target/classes .
 
     - name: Build MainAdapter JAR
       run: |
-        jar -cvfe build-outputs/MainAdapter.jar at.fhhagenberg.sqelevator.adapter.MainAdapter -C target/classes at/fhhagenberg/sqelevator/adapter/MainAdapter.class
+        jar -cvfe build-outputs/MainAdapter.jar at.fhhagenberg.sqelevator.adapter.MainAdapter -C target/classes .
 
     - name: Upload Executable JARs
       uses: actions/upload-artifact@v4
       with:
         name: executable-jars
         path: build-outputs/
+
 
   test:
     needs: build
